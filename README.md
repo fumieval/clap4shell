@@ -47,10 +47,10 @@ args:
 Usually, you want to embed configurations in a heredoc, pass all arguments to `urgeopts` and `eval` its output:
 
 ```bash
-eval $(urgeopts "$@" <<EOT
+eval "$(urgeopts "$@" <<EOT
 ...
 EOT
-)
+)"
 ```
 
 Notes

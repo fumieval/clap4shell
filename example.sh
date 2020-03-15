@@ -2,7 +2,7 @@
 
 set -ue
 
-eval $(urgeopts "$@" <<EOT
+eval "$(urgeopts "$@" <<EOT
 name: example
 bin_name: $0
 version: "0.0"
@@ -31,7 +31,7 @@ args:
     help: command arguments
     multiple: true
 EOT
-)
+)"
 
 # Print all variables
 declare -p | tail
