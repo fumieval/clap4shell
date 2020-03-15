@@ -4,7 +4,7 @@ set -ue
 
 eval $(urgeopts "$@" <<EOT
 name: example
-bin_name: example
+bin_name: $0
 version: "1.0"
 about: sample text
 author: Fumiaki Kinoshita <fumiexcel@gmail.com>

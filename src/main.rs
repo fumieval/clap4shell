@@ -87,13 +87,13 @@ fn build_app<'a, 'b>(obj: &'a Yaml) -> (App<'a, 'b>, AppInfo<'a>) {
             "help_message" => yaml_to_str!(app, v, help_message),
             "version_message" => yaml_to_str!(app, v, version_message),
             "settings" => {
-              for ys in v.as_vec().expect(".settings: expecting a list").iter() {
-                if let Some(s) = ys.as_str() {
-                    let setting = s.parse().expect(&format!("unknown AppSetting: {}", s));
-                    app = app.setting(setting);
+                for ys in v.as_vec().expect(".settings: expecting a list").iter() {
+                    if let Some(s) = ys.as_str() {
+                        let setting = s.parse().expect(&format!("unknown AppSetting: {}", s));
+                        app = app.setting(setting);
+                    }
                 }
-              }
-              app
+                app
             }
             "flags" => {
                 for (key_raw, arg_obj) in v.as_hash().expect("Expecting an object for args").iter()
@@ -115,9 +115,14 @@ fn build_app<'a, 'b>(obj: &'a Yaml) -> (App<'a, 'b>, AppInfo<'a>) {
                 app
             }
             "args" => {
-                for (i, arg_obj) in v.as_vec().expect(".args: expecting a list").iter().enumerate() {
-                  let msg = |s: &str| format!(".args.[{}]: {}", i, s);
-                  let key = arg_obj
+                for (i, arg_obj) in v
+                    .as_vec()
+                    .expect(".args: expecting a list")
+                    .iter()
+                    .enumerate()
+                {
+                    let msg = |s: &str| format!(".args.[{}]: {}", i, s);
+                    let key = arg_obj
                         .as_hash()
                         .expect(&msg("expecting an object"))
                         .get(&Yaml::String("name".to_string()))
@@ -150,9 +155,9 @@ fn main() {
     let (app, info) = build_app(&docs[0]);
 
     let matches = app.get_matches_safe().unwrap_or_else(|e| {
-      writeln!(std::io::stderr(), "{}", e.message).unwrap();
-      println!("exit 1");
-      std::process::exit(1);
+        writeln!(std::io::stderr(), "{}", e.message).unwrap();
+        println!("exit 1");
+        std::process::exit(1);
     });
 
     for k in info.flags {
@@ -161,7 +166,7 @@ fn main() {
     for k in info.args {
         match matches.values_of_lossy(k) {
             Some(v) => println!("{}='{}'", k, v.join("\n").replace("'", "\\'")),
-            None => println!("{}=", k)
+            None => println!("{}=", k),
         }
     }
 }
