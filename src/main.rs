@@ -43,33 +43,39 @@ macro_rules! yaml_to_str {
     }};
 }
 
-fn build_arg<'a, 'b>(key: &'a str, takes_value: bool, obj: &'a Yaml) -> Arg<'a, 'b> {
+fn build_arg<'a, 'b>(
+    context: &str,
+    key: &'a str,
+    takes_value: bool,
+    obj: &'a Yaml,
+) -> Result<Arg<'a, 'b>, String> {
     let mut a = Arg::with_name(key).takes_value(takes_value);
-    let arg_settings = obj.as_hash().expect("expecting object");
+    let msg = |s: &str| format!(".{}.{}: {}", context, key, s);
+    let arg_settings = obj.as_hash().ok_or("expecting object")?;
     for (k, v) in arg_settings.iter() {
-        a = match k.as_str().expect("key must be a string") {
+        a = match k.as_str().ok_or("key must be a string")? {
             "name" => a,
-            "required" => a.required(v.as_bool().expect("expecting bool")),
-            "multiple" => a.multiple(v.as_bool().expect("expecting bool")),
+            "required" => a.required(v.as_bool().ok_or(msg("expecting bool"))?),
+            "multiple" => a.multiple(v.as_bool().ok_or(msg("expecting bool"))?),
             "short" => yaml_to_str!(a, v, short),
             "long" => yaml_to_str!(a, v, long),
             "aliases" => yaml_vec_or_str!(a, v, alias),
             "help" => yaml_to_str!(a, v, help),
             "default_value" => yaml_to_str!(a, v, default_value),
             "possible_values" => yaml_vec_or_str!(a, v, possible_value),
-            key => panic!("Unexpected key {} for Arg", key),
+            key => return Err(format!("Unexpected key {} for Arg", key)),
         }
     }
-    a
+    Ok(a)
 }
 
-fn build_app<'a, 'b>(obj: &'a Yaml) -> (App<'a, 'b>, AppInfo<'a>) {
+fn build_app<'a, 'b>(obj: &'a Yaml) -> Result<(App<'a, 'b>, AppInfo<'a>), String> {
     let mut app = App::new("");
     let mut args = BTreeSet::new();
     let mut flags = BTreeSet::new();
 
-    for (key_raw, v) in obj.as_hash().expect("Expecting an object").iter() {
-        let key = key_raw.as_str().expect("key must be a string");
+    for (key_raw, v) in obj.as_hash().ok_or("Expecting an object")?.iter() {
+        let key = key_raw.as_str().ok_or("key must be a string")?;
         app = match key {
             "author" => yaml_to_str!(app, v, author),
             "bin_name" => yaml_to_str!(app, v, bin_name),
@@ -87,79 +93,78 @@ fn build_app<'a, 'b>(obj: &'a Yaml) -> (App<'a, 'b>, AppInfo<'a>) {
             "help_message" => yaml_to_str!(app, v, help_message),
             "version_message" => yaml_to_str!(app, v, version_message),
             "settings" => {
-                for ys in v.as_vec().expect(".settings: expecting a list").iter() {
-                    if let Some(s) = ys.as_str() {
-                        let setting = s.parse().expect(&format!("unknown AppSetting: {}", s));
-                        app = app.setting(setting);
-                    }
+                for (i, ys) in v
+                    .as_vec()
+                    .ok_or(".settings: expecting a list")?
+                    .iter()
+                    .enumerate()
+                {
+                    let s = ys
+                        .as_str()
+                        .ok_or(format!(".settings[{}]: expecting a string", i))?;
+                    app = app.setting(s.parse()?);
                 }
                 app
             }
             "flags" => {
-                for (key_raw, arg_obj) in v.as_hash().expect("Expecting an object for args").iter()
-                {
-                    let key = key_raw.as_str().expect("Key must be a string");
-                    let arg = build_arg(key, false, arg_obj);
+                for (key_raw, arg_obj) in v.as_hash().ok_or(".args: expecting an object")?.iter() {
+                    let inner = key_raw.as_str().ok_or(".args: key must be a string")?;
+                    let arg = build_arg(key, inner, false, arg_obj)?;
                     app = app.arg(arg);
-                    flags.insert(key);
+                    flags.insert(inner);
                 }
                 app
             }
             "opts" => {
-                for (key_raw, arg_obj) in v.as_hash().expect(".opts: expecting an object").iter() {
-                    let key = key_raw.as_str().expect(".opts: key must be a string");
-                    let arg = build_arg(key, true, arg_obj);
+                for (key_raw, arg_obj) in v.as_hash().ok_or(".opts: expecting an object")?.iter() {
+                    let inner = key_raw.as_str().ok_or(".opts: key must be a string")?;
+                    let arg = build_arg(key, inner, true, arg_obj)?;
                     app = app.arg(arg);
-                    args.insert(key);
+                    args.insert(inner);
                 }
                 app
             }
             "args" => {
                 for (i, arg_obj) in v
                     .as_vec()
-                    .expect(".args: expecting a list")
+                    .ok_or(".args: expecting a list")?
                     .iter()
                     .enumerate()
                 {
                     let msg = |s: &str| format!(".args.[{}]: {}", i, s);
-                    let key = arg_obj
+                    let inner = arg_obj
                         .as_hash()
-                        .expect(&msg("expecting an object"))
+                        .ok_or(&msg("expecting an object"))?
                         .get(&Yaml::String("name".to_string()))
-                        .expect(&msg("name not found"))
+                        .ok_or(&msg("name not found"))?
                         .as_str()
-                        .expect(&msg("name must be a string"));
-                    let arg = build_arg(key, true, arg_obj);
+                        .ok_or(&msg("name must be a string"))?;
+                    let arg = build_arg(key, inner, true, arg_obj)?;
                     app = app.arg(arg);
-                    args.insert(key);
+                    args.insert(inner);
                 }
                 app
             }
-            _ => panic!("Unexpected key {} for App", key),
+            _ => return Err(format!("Unexpected key {} for App", key)),
         }
     }
-    return (
+    Ok((
         app,
         AppInfo {
             args: args,
             flags: flags,
         },
-    );
+    ))
 }
 
-fn main() {
+fn app() -> Result<(), String> {
     let mut input = String::new();
-    std::io::stdin().read_to_string(&mut input).unwrap();
-    let docs = YamlLoader::load_from_str(&input).unwrap();
-
-    let (app, info) = build_app(&docs[0]);
-
-    let matches = app.get_matches_safe().unwrap_or_else(|e| {
-        writeln!(std::io::stderr(), "{}", e.message).unwrap();
-        println!("exit 1");
-        std::process::exit(1);
-    });
-
+    std::io::stdin()
+        .read_to_string(&mut input)
+        .map_err(|e| e.to_string())?;
+    let docs = YamlLoader::load_from_str(&input).map_err(|e| e.to_string())?;
+    let (app, info) = build_app(&docs[0])?;
+    let matches = app.get_matches_safe().map_err(|e| e.message)?;
     for k in info.flags {
         println!("{}={}", k, matches.occurrences_of(k));
     }
@@ -168,5 +173,17 @@ fn main() {
             Some(v) => println!("{}='{}'", k, v.join("\n").replace("'", "\\'")),
             None => println!("{}=", k),
         }
+    }
+    Ok(())
+}
+
+fn main() {
+    match app() {
+        Err(msg) => {
+            writeln!(std::io::stderr(), "{}", msg).unwrap();
+            println!("exit 1");
+            std::process::exit(1);
+        }
+        Ok(_) => {}
     }
 }
