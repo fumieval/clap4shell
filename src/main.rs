@@ -43,18 +43,19 @@ macro_rules! yaml_to_str {
     }};
 }
 
-fn build_arg<'a, 'b>(key: &'a str, takes_value: bool, obj: &'b Yaml) -> Arg<'a, 'b> {
+fn build_arg<'a, 'b>(key: &'a str, takes_value: bool, obj: &'a Yaml) -> Arg<'a, 'b> {
     let mut a = Arg::with_name(key).takes_value(takes_value);
     let arg_settings = obj.as_hash().expect("expecting object");
     for (k, v) in arg_settings.iter() {
         a = match k.as_str().expect("key must be a string") {
             "name" => a,
-            "required" => a.required(true),
-            "multiple" => a.multiple(true),
+            "required" => a.required(v.as_bool().expect("expecting bool")),
+            "multiple" => a.multiple(v.as_bool().expect("expecting bool")),
             "short" => yaml_to_str!(a, v, short),
             "long" => yaml_to_str!(a, v, long),
             "aliases" => yaml_vec_or_str!(a, v, alias),
             "help" => yaml_to_str!(a, v, help),
+            "default_value" => yaml_to_str!(a, v, default_value),
             "possible_values" => yaml_vec_or_str!(a, v, possible_value),
             key => panic!("Unexpected key {} for Arg", key),
         }
