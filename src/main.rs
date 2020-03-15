@@ -60,7 +60,7 @@ fn build_arg<'a, 'b>(key: &'a str, takes_value: bool, obj: &'a Yaml) -> Arg<'a, 
             key => panic!("Unexpected key {} for Arg", key),
         }
     }
-    return a;
+    a
 }
 
 fn build_app<'a, 'b>(obj: &'a Yaml) -> (App<'a, 'b>, AppInfo<'a>) {
