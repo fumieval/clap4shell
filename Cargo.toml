@@ -1,8 +1,13 @@
 [package]
 name = "urgeopts"
+description = "rich getopts replacement for shell script"
+homepage = "https://github.com/fumieval/urgeopts"
 version = "0.1.0"
 authors = ["Fumiaki Kinoshita <fumiexcel@gmail.com>"]
 edition = "2018"
+license = "MIT"
+readme = "README.md"
+categories = ["command-line-utilities", "command-line-interface"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

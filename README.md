@@ -1,6 +1,10 @@
 urgeopts: standalone clap wrapper
 ----
 
+[![urgeopts at crates.io](https://img.shields.io/crates/v/urgeopts.svg)](https://crates.io/crates/urgeopts)
+[![urgeopts at docs.rs](https://docs.rs/urgeopts/badge.svg)](https://docs.rs/urgeopts)
+
+
 `urgeopts` is a replacement for `getopt` based on [clap](https://github.com/clap-rs/clap).
 
 `urgeopts` takes option descriptors as a YAML document from stdin, and parse arguments passed to it, and prints the result which can be `eval`'d. See example.sh for concrete usage.
