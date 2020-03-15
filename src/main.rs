@@ -63,6 +63,10 @@ fn build_arg<'a, 'b>(
             "help" => yaml_to_str!(a, v, help),
             "default_value" => yaml_to_str!(a, v, default_value),
             "possible_values" => yaml_vec_or_str!(a, v, possible_value),
+            "value_delimiter" => yaml_to_str!(a, v, value_delimiter),
+            "requires" => yaml_vec_or_str!(a, v, possible_value),
+            "env" => yaml_to_str!(a, v, env),
+            "index" => a.index(v.as_i64().ok_or(msg("expecting integer"))? as u64),
             key => return Err(format!("Unexpected key {} for Arg", key)),
         }
     }
