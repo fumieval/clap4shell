@@ -26,10 +26,9 @@ flags:
     long: verbose
 # Options arguments are collected as newline-separated list of values.
 opts:
-  host:
-    help: host name
-    long: host
-    multiple: true
+  # usage syntax is also supported
+  # cf. https://docs.rs/clap/2.33.0/clap/struct.Arg.html#syntax
+  host: -h --host <HOST> 'host name'
   mode:
     long: mode
     help: option with a certain set of possible values

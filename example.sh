@@ -16,9 +16,7 @@ flags:
     short: v
     long: verbose
 opts:
-  host:
-    help: host name
-    long: host
+  host: -h --host <HOST> 'host name'
   mode:
     long: mode
     help: option with a certain set of possible values

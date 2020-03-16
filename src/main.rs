@@ -48,9 +48,13 @@ fn build_arg<'a, 'b>(
     takes_value: bool,
     obj: &'a Yaml,
 ) -> Result<Arg<'a, 'b>, String> {
-    let mut a = Arg::with_name(key).takes_value(takes_value);
+    let base = match obj.as_str() {
+        Some(usage) => return Ok(Arg::from_usage(usage).takes_value(takes_value)),
+        None => Arg::with_name(key),
+    };
+    let mut a = base.takes_value(takes_value);
     let msg = |s: &str| format!(".{}.{}: {}", context, key, s);
-    let arg_settings = obj.as_hash().ok_or("expecting object")?;
+    let arg_settings = obj.as_hash().ok_or(msg("expecting object"))?;
     for (k, v) in arg_settings.iter() {
         a = match k.as_str().ok_or("key must be a string")? {
             "name" => a,
