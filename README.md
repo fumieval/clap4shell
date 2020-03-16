@@ -42,6 +42,12 @@ args:
   - name: arg
     help: command arguments
     multiple: true
+subcommands:
+  ls: #The name will be assigned to $subcommand
+    about: Display a list of entities
+    args:
+    - name: name
+      multiple: true
 ```
 
 Usually, you want to embed configurations in a heredoc, pass all arguments to `urgeopts` and `eval` its output:

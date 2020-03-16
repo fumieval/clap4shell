@@ -1,13 +1,12 @@
-extern crate clap;
-extern crate yaml_rust;
-use clap::{App, Arg};
-use std::collections::BTreeSet;
+use clap::{App, Arg, ArgMatches};
+use std::collections::{BTreeMap, BTreeSet};
 use std::io::{Read, Write};
 use yaml_rust::{Yaml, YamlLoader};
 
 struct AppInfo<'a> {
     flags: BTreeSet<&'a str>,
     args: BTreeSet<&'a str>,
+    subcommands: BTreeMap<&'a str, AppInfo<'a>>,
 }
 
 macro_rules! yaml_vec_or_str {
@@ -73,10 +72,11 @@ fn build_arg<'a, 'b>(
     Ok(a)
 }
 
-fn build_app<'a, 'b>(obj: &'a Yaml) -> Result<(App<'a, 'b>, AppInfo<'a>), String> {
-    let mut app = App::new("");
+fn build_app<'a, 'b>(base_name: &str, obj: &'a Yaml) -> Result<(App<'a, 'b>, AppInfo<'a>), String> {
+    let mut app = App::new(base_name);
     let mut args = BTreeSet::new();
     let mut flags = BTreeSet::new();
+    let mut subcommands = BTreeMap::new();
 
     for (key_raw, v) in obj.as_hash().ok_or("Expecting an object")?.iter() {
         let key = key_raw.as_str().ok_or("key must be a string")?;
@@ -149,6 +149,21 @@ fn build_app<'a, 'b>(obj: &'a Yaml) -> Result<(App<'a, 'b>, AppInfo<'a>), String
                 }
                 app
             }
+            "subcommands" => {
+                for (key_raw, app_obj) in v
+                    .as_hash()
+                    .ok_or(".subcommands: expecting an object")?
+                    .iter()
+                {
+                    let inner_key = key_raw
+                        .as_str()
+                        .ok_or(".subcommands: key must be a string")?;
+                    let (sub, info) = build_app(inner_key, app_obj)?;
+                    app = app.subcommand(sub);
+                    subcommands.insert(inner_key, info);
+                }
+                app
+            }
             _ => return Err(format!("Unexpected key {} for App", key)),
         }
     }
@@ -157,6 +172,7 @@ fn build_app<'a, 'b>(obj: &'a Yaml) -> Result<(App<'a, 'b>, AppInfo<'a>), String
         AppInfo {
             args: args,
             flags: flags,
+            subcommands: subcommands,
         },
     ))
 }
@@ -167,18 +183,30 @@ fn app() -> Result<(), String> {
         .read_to_string(&mut input)
         .map_err(|e| e.to_string())?;
     let docs = YamlLoader::load_from_str(&input).map_err(|e| e.to_string())?;
-    let (app, info) = build_app(&docs[0])?;
+    let (app, info) = build_app("", &docs[0])?;
     let matches = app.get_matches_safe().map_err(|e| e.message)?;
-    for k in info.flags {
+    print_matches(&matches, &info);
+    Ok(())
+}
+
+fn print_matches<'a>(matches: &ArgMatches<'a>, info: &AppInfo<'a>) {
+    for k in info.flags.iter() {
         println!("{}={}", k, matches.occurrences_of(k));
     }
-    for k in info.args {
+    for k in info.args.iter() {
         match matches.values_of_lossy(k) {
             Some(v) => println!("{}='{}'", k, v.join("\n").replace("'", "\\'")),
             None => println!("{}=", k),
         }
     }
-    Ok(())
+    match matches.subcommand() {
+        (name, Some(sub_app)) => {
+            let sub_info = info.subcommands.get(name).expect("subcommand info");
+            println!("subcommand={}", name);
+            print_matches(sub_app, sub_info);
+        }
+        _ => {}
+    }
 }
 
 fn main() {

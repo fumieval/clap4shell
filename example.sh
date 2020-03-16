@@ -26,10 +26,15 @@ opts:
 args:
   - name: cmd
     help: command
-    required: true
   - name: arg
     help: command arguments
     multiple: true
+subcommands:
+  ls:
+    about: Display a list of entities
+    args:
+    - name: name
+      multiple: true
 EOT
 )"
 
