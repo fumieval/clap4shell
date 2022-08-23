@@ -196,6 +196,9 @@ fn app() -> Result<(), String> {
         .read_to_string(&mut input)
         .map_err(|e| e.to_string())?;
     let docs = YamlLoader::load_from_str(&input).map_err(|e| e.to_string())?;
+    if docs.len() != 1 {
+        return Err("expecting a single YAML document".to_string())
+    }
     let (app, info) = build_app("", &docs[0])?;
     let matches = app.get_matches_safe().map_err(|e| e.to_string())?;
     print_matches(&matches, &info);
@@ -225,8 +228,7 @@ fn print_matches<'a>(matches: &ArgMatches, info: &AppInfo<'a>) {
 fn main() {
     match app() {
         Err(msg) => {
-            writeln!(std::io::stderr(), "{}", msg).unwrap();
-            println!("exit 1");
+            writeln!(std::io::stderr(), "clap4shell: {}", msg).unwrap();
             std::process::exit(1);
         }
         Ok(_) => {}
