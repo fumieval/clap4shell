@@ -1,13 +1,13 @@
-urgeopts: standalone clap wrapper
+clap4shell: standalone clap wrapper
 ----
 
-[![urgeopts at crates.io](https://img.shields.io/crates/v/urgeopts.svg)](https://crates.io/crates/urgeopts)
-[![urgeopts at docs.rs](https://docs.rs/urgeopts/badge.svg)](https://docs.rs/urgeopts)
+[![clap4shell at crates.io](https://img.shields.io/crates/v/clap4shell.svg)](https://crates.io/crates/clap4shell)
+[![clap4shell at docs.rs](https://docs.rs/clap4shell/badge.svg)](https://docs.rs/clap4shell)
 
 
-`urgeopts` is a replacement for `getopt` based on [clap](https://github.com/clap-rs/clap).
+`clap4shell` is a replacement for `getopt` based on [clap](https://github.com/clap-rs/clap).
 
-`urgeopts` takes option descriptors as a YAML document from stdin, and parse arguments passed to it, and prints the result which can be `eval`'d. See example.sh for concrete usage.
+`clap4shell` takes option descriptors as a YAML document from stdin, and parse arguments passed to it, and prints the result which can be `eval`'d. See example.sh for concrete usage.
 
 Configurations look like
 
@@ -49,13 +49,22 @@ subcommands:
       multiple: true
 ```
 
-Usually, you want to embed configurations in a heredoc, pass all arguments to `urgeopts` and `eval` its output:
+Usually, you want to embed configurations in a heredoc, pass all arguments to `clap4shell` and `eval` its output:
 
 ```bash
-eval "$(urgeopts "$@" <<EOT
+eval "$(clap4shell "$@" <<EOT
 ...
 EOT
 )"
+```
+
+Completion
+----
+
+`clap4shell-completion <shell> -o <path>` subcommand generates an autocompletion script and writes the script to `path`.
+
+```sh
+clap4shell clap4shell-completion bash -o ./bash-completion.sh < definition.yaml
 ```
 
 Notes

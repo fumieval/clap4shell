@@ -1,4 +1,5 @@
-use clap::{App, Arg, ArgMatches, AppSettings};
+use clap::{App, AppSettings, Arg, ArgMatches};
+use clap_complete::Generator;
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::{Read, Write};
 use yaml_rust::{Yaml, YamlLoader};
@@ -39,7 +40,9 @@ macro_rules! yaml_to_char {
         $a.$c($v
             .as_str()
             .expect(&*format!("expecting string for {}", stringify!($c)))
-            .chars().nth(0).expect("expecting a single character"))
+            .chars()
+            .nth(0)
+            .expect("expecting a single character"))
     }};
 }
 
@@ -197,11 +200,39 @@ fn app() -> Result<(), String> {
         .map_err(|e| e.to_string())?;
     let docs = YamlLoader::load_from_str(&input).map_err(|e| e.to_string())?;
     if docs.len() != 1 {
-        return Err("expecting a single YAML document".to_string())
+        return Err("expecting a single YAML document".to_string());
     }
-    let (app, info) = build_app("", &docs[0])?;
-    let matches = app.get_matches_safe().map_err(|e| e.to_string())?;
-    print_matches(&matches, &info);
+    let (app_body, info) = build_app("", &docs[0])?;
+
+    let app_completion = App::new("clap4shell-completion")
+        .arg(Arg::new("shell").takes_value(true).required(true))
+        .arg(
+            Arg::new("output")
+                .takes_value(true)
+                .required(true)
+                .short('o')
+                .long("output"),
+        );
+
+    let app = App::new("clap4shell")
+        .bin_name("clap4shell")
+        .subcommand(app_completion)
+        .subcommand(app_body.clone());
+
+    let matches = app.clone().get_matches_safe().map_err(|e| e.to_string())?;
+
+    match matches.subcommand() {
+        Some(("clap4shell-completion", sub_matches)) => {
+            let shell = sub_matches.value_of("shell").ok_or("shell is required")?;
+            let path = sub_matches.value_of("output").ok_or("output is required")?;
+            let mut file = std::fs::File::create(&path).map_err(|e| e.to_string())?;
+            shell
+                .parse::<clap_complete::Shell>()?
+                .generate(&app_body, &mut file);
+        }
+        _ => print_matches(&matches, &info),
+    }
+
     Ok(())
 }
 

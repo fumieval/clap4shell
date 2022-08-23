@@ -4,7 +4,7 @@ set -ue
 
 eval "$(clap4shell "$@" <<EOT
 name: example
-bin_name: $0
+bin_name: $(basename $0)
 version: "0.0"
 about: sample text
 author: Fumiaki Kinoshita <fumiexcel@gmail.com>
@@ -27,12 +27,12 @@ args:
   - name: arg
     help: command arguments
     multiple: true
-subcommands:
-  ls:
-    about: Display a list of entities
-    args:
-    - name: name
-      multiple: true
+# subcommands:
+#  ls:
+#    about: Display a list of entities
+#    args:
+#    - name: name
+#      multiple: true
 EOT
 )"
 
