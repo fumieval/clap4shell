@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -ue
 
-eval "$(urgeopts "$@" <<EOT
+eval "$(clap4shell "$@" <<EOT
 name: example
 bin_name: $0
 version: "0.0"

@@ -1,4 +1,4 @@
-use clap::{App, Arg, ArgMatches};
+use clap::{App, Arg, ArgMatches, AppSettings};
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::{Read, Write};
 use yaml_rust::{Yaml, YamlLoader};
@@ -34,6 +34,15 @@ macro_rules! yaml_vec_or_str {
     }};
 }
 
+macro_rules! yaml_to_char {
+    ($a:ident, $v:ident, $c:ident) => {{
+        $a.$c($v
+            .as_str()
+            .expect(&*format!("expecting string for {}", stringify!($c)))
+            .chars().nth(0).expect("expecting a single character"))
+    }};
+}
+
 macro_rules! yaml_to_str {
     ($a:ident, $v:ident, $c:ident) => {{
         $a.$c($v
@@ -42,12 +51,12 @@ macro_rules! yaml_to_str {
     }};
 }
 
-fn build_arg<'a, 'b>(
+fn build_arg<'a>(
     context: &str,
     key: &'a str,
     takes_value: bool,
     obj: &'a Yaml,
-) -> Result<Arg<'a, 'b>, String> {
+) -> Result<Arg<'a>, String> {
     let base = match obj.as_str() {
         Some(usage) => return Ok(Arg::from_usage(usage).takes_value(takes_value)),
         None => Arg::with_name(key),
@@ -60,23 +69,23 @@ fn build_arg<'a, 'b>(
             "name" => a,
             "required" => a.required(v.as_bool().ok_or(msg("expecting bool"))?),
             "multiple" => a.multiple(v.as_bool().ok_or(msg("expecting bool"))?),
-            "short" => yaml_to_str!(a, v, short),
+            "short" => yaml_to_char!(a, v, short),
             "long" => yaml_to_str!(a, v, long),
             "aliases" => yaml_vec_or_str!(a, v, alias),
             "help" => yaml_to_str!(a, v, help),
             "default_value" => yaml_to_str!(a, v, default_value),
             "possible_values" => yaml_vec_or_str!(a, v, possible_value),
-            "value_delimiter" => yaml_to_str!(a, v, value_delimiter),
+            "value_delimiter" => yaml_to_char!(a, v, value_delimiter),
             "requires" => yaml_vec_or_str!(a, v, possible_value),
-            "env" => yaml_to_str!(a, v, env),
-            "index" => a.index(v.as_i64().ok_or(msg("expecting integer"))? as u64),
+            // "env" => yaml_to_str!(a, v, env),
+            "index" => a.index(v.as_i64().ok_or(msg("expecting integer"))? as usize),
             key => return Err(format!("Unexpected key {} for Arg", key)),
         }
     }
     Ok(a)
 }
 
-fn build_app<'a, 'b>(base_name: &str, obj: &'a Yaml) -> Result<(App<'a, 'b>, AppInfo<'a>), String> {
+fn build_app<'a>(base_name: &str, obj: &'a Yaml) -> Result<(App<'a>, AppInfo<'a>), String> {
     let mut app = App::new(base_name);
     let mut args = BTreeSet::new();
     let mut flags = BTreeSet::new();
@@ -96,8 +105,8 @@ fn build_app<'a, 'b>(base_name: &str, obj: &'a Yaml) -> Result<(App<'a, 'b>, App
             "long_version" => yaml_to_str!(app, v, long_version),
             "usage" => yaml_to_str!(app, v, usage),
             "help" => yaml_to_str!(app, v, help),
-            "help_short" => yaml_to_str!(app, v, help_short),
-            "version_short" => yaml_to_str!(app, v, version_short),
+            "help_short" => yaml_to_char!(app, v, help_short),
+            "version_short" => yaml_to_char!(app, v, version_short),
             "help_message" => yaml_to_str!(app, v, help_message),
             "version_message" => yaml_to_str!(app, v, version_message),
             "settings" => {
@@ -110,7 +119,7 @@ fn build_app<'a, 'b>(base_name: &str, obj: &'a Yaml) -> Result<(App<'a, 'b>, App
                     let s = ys
                         .as_str()
                         .ok_or(format!(".settings[{}]: expecting a string", i))?;
-                    app = app.setting(s.parse()?);
+                    app = app.setting(parse_app_settings(s)?);
                 }
                 app
             }
@@ -188,12 +197,12 @@ fn app() -> Result<(), String> {
         .map_err(|e| e.to_string())?;
     let docs = YamlLoader::load_from_str(&input).map_err(|e| e.to_string())?;
     let (app, info) = build_app("", &docs[0])?;
-    let matches = app.get_matches_safe().map_err(|e| e.message)?;
+    let matches = app.get_matches_safe().map_err(|e| e.to_string())?;
     print_matches(&matches, &info);
     Ok(())
 }
 
-fn print_matches<'a>(matches: &ArgMatches<'a>, info: &AppInfo<'a>) {
+fn print_matches<'a>(matches: &ArgMatches, info: &AppInfo<'a>) {
     for k in info.flags.iter() {
         println!("{}={}", k, matches.occurrences_of(k));
     }
@@ -204,7 +213,7 @@ fn print_matches<'a>(matches: &ArgMatches<'a>, info: &AppInfo<'a>) {
         }
     }
     match matches.subcommand() {
-        (name, Some(sub_app)) => {
+        Some((name, sub_app)) => {
             let sub_info = info.subcommands.get(name).expect("subcommand info");
             println!("subcommand={}", name);
             print_matches(sub_app, sub_info);
@@ -221,5 +230,62 @@ fn main() {
             std::process::exit(1);
         }
         Ok(_) => {}
+    }
+}
+
+fn parse_app_settings(s: &str) -> Result<AppSettings, String> {
+    #[allow(deprecated)]
+    #[allow(unreachable_patterns)]
+    match &*s.to_ascii_lowercase() {
+        "argrequiredelsehelp" => Ok(AppSettings::ArgRequiredElseHelp),
+        "subcommandprecedenceoverarg" => Ok(AppSettings::SubcommandPrecedenceOverArg),
+        "argsnegatesubcommands" => Ok(AppSettings::ArgsNegateSubcommands),
+        "allowexternalsubcommands" => Ok(AppSettings::AllowExternalSubcommands),
+        "strictutf8" => Ok(AppSettings::StrictUtf8),
+        "allowinvalidutf8forexternalsubcommands" => {
+            Ok(AppSettings::AllowInvalidUtf8ForExternalSubcommands)
+        }
+        "allowhyphenvalues" => Ok(AppSettings::AllowHyphenValues),
+        "allowleadinghyphen" => Ok(AppSettings::AllowLeadingHyphen),
+        "allownegativenumbers" => Ok(AppSettings::AllowNegativeNumbers),
+        "allowmissingpositional" => Ok(AppSettings::AllowMissingPositional),
+        "unifiedhelpmessage" => Ok(AppSettings::UnifiedHelpMessage),
+        "coloredhelp" => Ok(AppSettings::ColoredHelp),
+        "coloralways" => Ok(AppSettings::ColorAlways),
+        "colorauto" => Ok(AppSettings::ColorAuto),
+        "colornever" => Ok(AppSettings::ColorNever),
+        "dontdelimittrailingvalues" => Ok(AppSettings::DontDelimitTrailingValues),
+        "dontcollapseargsinusage" => Ok(AppSettings::DontCollapseArgsInUsage),
+        "derivedisplayorder" => Ok(AppSettings::DeriveDisplayOrder),
+        "disablecoloredhelp" => Ok(AppSettings::DisableColoredHelp),
+        "disablehelpsubcommand" => Ok(AppSettings::DisableHelpSubcommand),
+        "disablehelpflag" => Ok(AppSettings::DisableHelpFlag),
+        "disablehelpflags" => Ok(AppSettings::DisableHelpFlags),
+        "disableversionflag" => Ok(AppSettings::DisableVersionFlag),
+        "disableversion" => Ok(AppSettings::DisableVersion),
+        "propagateversion" => Ok(AppSettings::PropagateVersion),
+        "propagateversion" => Ok(AppSettings::GlobalVersion),
+        "hidepossiblevalues" => Ok(AppSettings::HidePossibleValues),
+        "hidepossiblevaluesinhelp" => Ok(AppSettings::HidePossibleValuesInHelp),
+        "helpexpected" => Ok(AppSettings::HelpExpected),
+        "hidden" => Ok(AppSettings::Hidden),
+        "noautohelp" => Ok(AppSettings::NoAutoHelp),
+        "noautoversion" => Ok(AppSettings::NoAutoVersion),
+        "nobinaryname" => Ok(AppSettings::NoBinaryName),
+        "subcommandsnegatereqs" => Ok(AppSettings::SubcommandsNegateReqs),
+        "subcommandrequired" => Ok(AppSettings::SubcommandRequired),
+        "subcommandrequiredelsehelp" => Ok(AppSettings::SubcommandRequiredElseHelp),
+        "uselongformatforhelpsubcommand" => Ok(AppSettings::UseLongFormatForHelpSubcommand),
+        "trailingvararg" => Ok(AppSettings::TrailingVarArg),
+        "unifiedhelp" => Ok(AppSettings::UnifiedHelp),
+        "nextlinehelp" => Ok(AppSettings::NextLineHelp),
+        "ignoreerrors" => Ok(AppSettings::IgnoreErrors),
+        "waitonerror" => Ok(AppSettings::WaitOnError),
+        "built" => Ok(AppSettings::Built),
+        "binnamebuilt" => Ok(AppSettings::BinNameBuilt),
+        "infersubcommands" => Ok(AppSettings::InferSubcommands),
+        "allargsoverrideself" => Ok(AppSettings::AllArgsOverrideSelf),
+        "inferlongargs" => Ok(AppSettings::InferLongArgs),
+        _ => Err(format!("unknown AppSetting: `{}`", s)),
     }
 }
