@@ -61,10 +61,17 @@ fn build_arg<'a>(
     obj: &'a Yaml,
 ) -> Result<Arg<'a>, String> {
     let base = match obj.as_str() {
-        Some(usage) => return Ok(Arg::from_usage(usage).takes_value(takes_value)),
+        Some(usage) => {
+            return Ok(Arg::from_usage(usage)
+                .takes_value(takes_value)
+                .allow_invalid_utf8(true))
+        }
         None => Arg::with_name(key),
     };
     let mut a = base.takes_value(takes_value);
+    if takes_value {
+        a = a.allow_invalid_utf8(true);
+    }
     let msg = |s: &str| format!(".{}.{}: {}", context, key, s);
     let arg_settings = obj.as_hash().ok_or(msg("expecting object"))?;
     for (k, v) in arg_settings.iter() {
@@ -214,10 +221,9 @@ fn app() -> Result<(), String> {
                 .long("output"),
         );
 
-    let app = App::new("clap4shell")
-        .bin_name("clap4shell")
+    let app = App::new(app_body.get_name())
         .subcommand(app_completion)
-        .subcommand(app_body.clone());
+        .subcommand(app_body.clone().name("parse"));
 
     let matches = app.clone().get_matches_safe().map_err(|e| e.to_string())?;
 
@@ -230,7 +236,8 @@ fn app() -> Result<(), String> {
                 .parse::<clap_complete::Shell>()?
                 .generate(&app_body, &mut file);
         }
-        _ => print_matches(&matches, &info),
+        Some(("parse", sub_matches)) => print_matches(&sub_matches, &info),
+        _ => panic!("Unexpected subcommand"),
     }
 
     Ok(())

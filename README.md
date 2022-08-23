@@ -7,7 +7,7 @@ clap4shell: standalone clap wrapper
 
 `clap4shell` is a replacement for `getopt` based on [clap](https://github.com/clap-rs/clap).
 
-`clap4shell` takes option descriptors as a YAML document from stdin, and parse arguments passed to it, and prints the result which can be `eval`'d. See example.sh for concrete usage.
+`clap4shell` takes option descriptors as a YAML document from stdin, then prints the parsed result in newline-delimited format which can be `eval`'d. See example.sh for concrete usage.
 
 Installation
 ----
@@ -62,7 +62,7 @@ subcommands:
 The typical usage is to embed option definitions in a shell heredoc, pass all arguments to `clap4shell` and `eval` its output:
 
 ```bash
-eval "$(clap4shell "$@" <<EOT
+eval "$(clap4shell parse "$@" <<EOT
 ...
 EOT
 )"

@@ -2,7 +2,7 @@
 
 set -ue
 
-eval "$(clap4shell "$@" <<EOT
+eval "$(clap4shell parse "$@" <<EOT
 name: example
 bin_name: $(basename $0)
 version: "0.0"
@@ -16,7 +16,7 @@ flags:
     short: v
     long: verbose
 opts:
-  host: -h --host <HOST> 'host name'
+  host: --host <HOST> 'host name'
   mode:
     long: mode
     help: option with a certain set of possible values
