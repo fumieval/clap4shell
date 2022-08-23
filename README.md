@@ -9,6 +9,16 @@ clap4shell: standalone clap wrapper
 
 `clap4shell` takes option descriptors as a YAML document from stdin, and parse arguments passed to it, and prints the result which can be `eval`'d. See example.sh for concrete usage.
 
+Installation
+----
+
+```sh
+nix profile install github:fumieval/clap4shell
+```
+
+Usage
+----
+
 Configurations look like
 
 ```yaml
@@ -49,7 +59,7 @@ subcommands:
       multiple: true
 ```
 
-Usually, you want to embed configurations in a heredoc, pass all arguments to `clap4shell` and `eval` its output:
+The typical usage is to embed option definitions in a shell heredoc, pass all arguments to `clap4shell` and `eval` its output:
 
 ```bash
 eval "$(clap4shell "$@" <<EOT
@@ -70,4 +80,5 @@ clap4shell clap4shell-completion bash -o ./bash-completion.sh < definition.yaml
 Notes
 ----
 
-I intentionally didn't use `clap::App::from_yaml` because the YAML representation tend to be redundant, and hard to diagnose panics.
+I intentionally avoided using `clap::App::from_yaml` because the YAML representation tend to be redundant, and hard to diagnose panics.
+Also, the YAML interface is being deprecated: https://github.com/clap-rs/clap/issues/3087
