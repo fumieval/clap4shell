@@ -23,41 +23,32 @@ Configurations look like
 
 ```yaml
 name: example
-bin_name: $0
-version: "1.0"
+bin_name: $(basename $0)
+version: "0.0"
 about: sample text
 author: Fumiaki Kinoshita <fumiexcel@gmail.com>
-# Flags take no arguments.
-# Number of occurences will be reported (e.g. verbose=1)
-flags:
-  verbose:
-    help: verbose output
-    short: v
-    long: verbose
-# Options arguments are collected as newline-separated list of values.
-opts:
-  # usage syntax is also supported
-  # cf. https://docs.rs/clap/2.33.0/clap/struct.Arg.html#syntax
-  host: -h --host <HOST> 'host name'
-  mode:
-    long: mode
-    help: option with a certain set of possible values
-    possible_values: [ herbivore, carnivore, omnivore ]
-# Positional arguments
 args:
-  - name: cmd
-    help: command
-    required: true
-  - name: arg
-    help: command arguments
-    multiple: true
-subcommands:
-  ls: #The name will be assigned to $subcommand
-    about: Display a list of entities
-    args:
-    - name: name
-      multiple: true
+  - verbose:
+      help: verbose output
+      short: v
+      long: verbose
+  - host:
+      takes_value: true
+      long: host
+      value_name: <HOST>
+      help: 'host name'
+  - mode:
+      long: mode
+      help: option with a certain set of possible values
+      possible_values: [ herbivore, carnivore, omnivore ]
+  - cmd:
+      help: command
+  - arg:
+      help: command arguments
+      multiple_values: true
 ```
+
+The schema is based on [clap_serde](https://docs.rs/clap-serde/latest/clap_serde/).
 
 The typical usage is to embed option definitions in a shell heredoc, pass all arguments to `clap4shell` and `eval` its output:
 

@@ -8,25 +8,25 @@ bin_name: $(basename $0)
 version: "0.0"
 about: sample text
 author: Fumiaki Kinoshita <fumiexcel@gmail.com>
-settings:
-  - ArgRequiredElseHelp
-flags:
-  verbose:
-    help: verbose output
-    short: v
-    long: verbose
-opts:
-  host: --host <HOST> 'host name'
-  mode:
-    long: mode
-    help: option with a certain set of possible values
-    possible_values: [ herbivore, carnivore, omnivore ]
 args:
-  - name: cmd
-    help: command
-  - name: arg
-    help: command arguments
-    multiple: true
+  - verbose:
+      help: verbose output
+      short: v
+      long: verbose
+  - host:
+      takes_value: true
+      long: host
+      value_name: <HOST>
+      help: 'host name'
+  - mode:
+      long: mode
+      help: option with a certain set of possible values
+      possible_values: [ herbivore, carnivore, omnivore ]
+  - cmd:
+      help: command
+  - arg:
+      help: command arguments
+      multiple_values: true
 # subcommands:
 #  ls:
 #    about: Display a list of entities
