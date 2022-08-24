@@ -37,7 +37,7 @@ in
 {
   cargo2nixVersion = "0.11.0";
   workspace = {
-    clap4shell = rustPackages.unknown.clap4shell."0.1.2";
+    clap4shell = rustPackages.unknown.clap4shell."0.1.3";
   };
   "registry+https://github.com/rust-lang/crates.io-index".atty."0.2.14" = overridableMkRustCrate (profileName: rec {
     name = "atty";
@@ -93,9 +93,9 @@ in
     };
   });
   
-  "unknown".clap4shell."0.1.2" = overridableMkRustCrate (profileName: rec {
+  "unknown".clap4shell."0.1.3" = overridableMkRustCrate (profileName: rec {
     name = "clap4shell";
-    version = "0.1.2";
+    version = "0.1.3";
     registry = "unknown";
     src = fetchCrateLocal workspaceSrc;
     dependencies = {

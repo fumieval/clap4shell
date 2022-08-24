@@ -2,7 +2,7 @@
 name = "clap4shell"
 description = "rich getopts replacement for shell script"
 homepage = "https://github.com/fumieval/clap4shell"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["Fumiaki Kinoshita <fumiexcel@gmail.com>"]
 edition = "2021"
 license = "MIT"
