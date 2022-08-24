@@ -52,7 +52,7 @@ dependencies = [
 
 [[package]]
 name = "clap4shell"
-version = "0.1.3"
+version = "0.2.0"
 dependencies = [
  "clap",
  "clap-serde",

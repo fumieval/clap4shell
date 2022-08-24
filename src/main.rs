@@ -1,4 +1,4 @@
-use clap::{App, AppSettings, Arg, ArgMatches};
+use clap::{App, Arg, ArgMatches};
 use clap_complete::Generator;
 use std::io::{Read, Write};
 
