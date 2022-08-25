@@ -1,6 +1,6 @@
 use clap::{App, Arg, ArgMatches};
 use clap_complete::Generator;
-use std::io::{Read, Write};
+use std::io::Read;
 
 fn app() -> Result<(), String> {
     let mut input = String::new();
@@ -30,15 +30,15 @@ fn app() -> Result<(), String> {
 
     match matches.subcommand() {
         Some(("clap4shell-completion", sub_matches)) => {
-            let shell = sub_matches.value_of("shell").ok_or("shell is required")?;
-            let path = sub_matches.value_of("output").ok_or("output is required")?;
+            let shell = sub_matches.value_of("shell").unwrap();
+            let path = sub_matches.value_of("output").unwrap();
             let mut file = std::fs::File::create(&path).map_err(|e| e.to_string())?;
             shell
                 .parse::<clap_complete::Shell>()?
                 .generate(&app_body, &mut file);
         }
         Some((name, sub_matches)) if name == app_body.get_name() => {
-            print_matches(&sub_matches, &app_body)
+            print_matches(sub_matches, &app_body)
         }
         _ => panic!("Unexpected subcommand"),
     }
@@ -53,7 +53,7 @@ fn print_matches(matches: &ArgMatches, app: &App) {
             match matches.values_of(k) {
                 Some(v) => {
                     let values: Vec<&str> = v.collect();
-                    println!("{}='{}'", k, values.join("\n").replace("'", "\\'"))
+                    println!("{}='{}'", k, values.join("\n").replace('\'', "\\'"))
                 }
                 None => (),
             }
@@ -61,25 +61,19 @@ fn print_matches(matches: &ArgMatches, app: &App) {
             println!("{}={}", k, matches.occurrences_of(k));
         }
     }
-    match matches.subcommand() {
-        Some((name, sub_app)) => {
-            let sub_info = app
-                .get_subcommands()
-                .find(|s| s.get_name() == name)
-                .expect("subcommand info");
-            println!("subcommand={}", name);
-            print_matches(&sub_app, &sub_info);
-        }
-        _ => {}
+    if let Some((name, sub_app)) = matches.subcommand() {
+        let sub_info = app
+            .get_subcommands()
+            .find(|s| s.get_name() == name)
+            .expect("subcommand info");
+        println!("subcommand={}", name);
+        print_matches(sub_app, sub_info);
     }
 }
 
 fn main() {
-    match app() {
-        Err(msg) => {
-            writeln!(std::io::stderr(), "clap4shell: {}", msg).unwrap();
-            std::process::exit(1);
-        }
-        Ok(_) => {}
+    if let Err(msg) = app() {
+        eprintln!("clap4shell: {}", msg);
+        std::process::exit(1);
     }
 }
