@@ -38,7 +38,7 @@ fn app() -> Result<(), String> {
                 .generate(&app_body, &mut file);
         }
         Some((name, sub_matches)) if name == app_body.get_name() => {
-            print_matches(sub_matches, &app_body)
+            print_matches(vec![], sub_matches, &app_body)
         }
         _ => panic!("Unexpected subcommand"),
     }
@@ -46,16 +46,13 @@ fn app() -> Result<(), String> {
     Ok(())
 }
 
-fn print_matches(matches: &ArgMatches, app: &App) {
+fn print_matches(parents: Vec<&str>, matches: &ArgMatches, app: &App) {
     for arg in app.get_arguments() {
         let k = arg.get_name();
         if arg.is_takes_value_set() || arg.is_positional() {
-            match matches.values_of(k) {
-                Some(v) => {
-                    let values: Vec<&str> = v.collect();
-                    println!("{}='{}'", k, values.join("\n").replace('\'', "\\'"))
-                }
-                None => (),
+            if let Some(v) = matches.values_of(k) {
+                let values: Vec<&str> = v.collect();
+                println!("{}='{}'", k, values.join("\n").replace('\'', "\\'"))
             }
         } else {
             println!("{}={}", k, matches.occurrences_of(k));
@@ -66,8 +63,17 @@ fn print_matches(matches: &ArgMatches, app: &App) {
             .get_subcommands()
             .find(|s| s.get_name() == name)
             .expect("subcommand info");
-        println!("subcommand={}", name);
-        print_matches(sub_app, sub_info);
+        let mut subcommands = parents.clone();
+        subcommands.push(name);
+        println!(
+            "{}={}",
+            std::iter::once("subcommand")
+                .chain(parents)
+                .collect::<Vec<&str>>()
+                .join("_"),
+            name
+        );
+        print_matches(subcommands, sub_app, sub_info);
     }
 }
 
