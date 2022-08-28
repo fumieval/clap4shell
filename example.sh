@@ -2,7 +2,7 @@
 
 set -ue
 
-eval "$(clap4shell parse "$@" <<EOT
+eval "$(clap4shell "$@" <<EOT
 name: example
 bin_name: $(basename $0)
 version: "0.0"
@@ -27,12 +27,13 @@ args:
   - arg:
       help: command arguments
       multiple_values: true
-# subcommands:
-#  ls:
-#    about: Display a list of entities
-#    args:
-#    - name: name
-#      multiple: true
+subcommands:
+  - ls:
+      bin_name: ls
+      about: Display a list of entities
+      args:
+        - entity:
+            multiple_values: true
 EOT
 )"
 

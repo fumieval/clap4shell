@@ -53,7 +53,7 @@ The schema is based on [clap_serde](https://docs.rs/clap-serde/latest/clap_serde
 The typical usage is to embed option definitions in a shell heredoc, pass all arguments to `clap4shell` and `eval` its output:
 
 ```bash
-eval "$(clap4shell parse "$@" <<EOT
+eval "$(clap4shell "$@" <<EOT
 ...
 EOT
 )"

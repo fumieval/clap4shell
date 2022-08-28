@@ -13,6 +13,7 @@ fn app() -> Result<(), String> {
     app_body = app_body.name("parse");
 
     let app_completion = App::new("clap4shell-completion")
+        .bin_name(app_body.get_bin_name().unwrap_or("clap4shell"))
         .arg(Arg::new("shell").takes_value(true).required(true))
         .arg(
             Arg::new("output")
@@ -22,9 +23,7 @@ fn app() -> Result<(), String> {
                 .long("output"),
         );
 
-    let app = App::new(app_body.get_name())
-        .subcommand(app_completion)
-        .subcommand(app_body.clone());
+    let app = app_body.subcommand(app_completion);
 
     let matches = app.clone().get_matches_safe().map_err(|e| e.to_string())?;
 
@@ -35,12 +34,9 @@ fn app() -> Result<(), String> {
             let mut file = std::fs::File::create(&path).map_err(|e| e.to_string())?;
             shell
                 .parse::<clap_complete::Shell>()?
-                .generate(&app_body, &mut file);
+                .generate(&app, &mut file);
         }
-        Some((name, sub_matches)) if name == app_body.get_name() => {
-            print_matches(vec![], sub_matches, &app_body)
-        }
-        _ => panic!("Unexpected subcommand"),
+        _ => print_matches(vec![], &matches, &app),
     }
 
     Ok(())
