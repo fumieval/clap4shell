@@ -7,10 +7,9 @@ fn app() -> Result<(), String> {
     std::io::stdin()
         .read_to_string(&mut input)
         .map_err(|e| e.to_string())?;
-    let mut app_body: clap::Command = serde_yaml::from_str::<clap_serde::CommandWrap>(&input)
+    let app_body: clap::Command = serde_yaml::from_str::<clap_serde::CommandWrap>(&input)
         .map_err(|e| e.to_string())?
         .into();
-    app_body = app_body.name("parse");
 
     let app_completion = App::new("clap4shell-completion")
         .bin_name(app_body.get_bin_name().unwrap_or("clap4shell"))
