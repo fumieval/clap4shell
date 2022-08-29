@@ -12,7 +12,6 @@ fn app() -> Result<(), String> {
         .into();
 
     let app_completion = App::new("clap4shell-completion")
-        .bin_name(app_body.get_bin_name().unwrap_or("clap4shell"))
         .arg(Arg::new("shell").takes_value(true).required(true))
         .arg(
             Arg::new("output")
@@ -22,7 +21,8 @@ fn app() -> Result<(), String> {
                 .long("output"),
         );
 
-    let app = app_body.subcommand(app_completion);
+    let mut app = app_body.subcommand(app_completion);
+    app.build();
 
     let matches = app.clone().get_matches_safe().map_err(|e| e.to_string())?;
 
