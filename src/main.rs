@@ -27,7 +27,6 @@ fn app() -> Result<(), String> {
         .arg(
             Arg::new("output")
                 .takes_value(true)
-                .required(true)
                 .short('o')
                 .long("output")
                 .value_name("FILE")
@@ -44,16 +43,26 @@ fn app() -> Result<(), String> {
             let shell = match sub_matches.value_of("shell") {
                 Some(x) => x.to_string(),
                 None => {
-                    let var = std::env::var_os("SHELL").expect("SHELL environment variable is not set");
+                    let var =
+                        std::env::var_os("SHELL").expect("SHELL environment variable is not set");
                     let path = std::path::Path::new(&var);
                     path.file_name().unwrap().to_str().unwrap().to_string()
                 }
-            };
-            let path = sub_matches.value_of("output").unwrap();
-            let mut file = std::fs::File::create(&path).map_err(|e| e.to_string())?;
-            shell
-                .parse::<clap_complete::Shell>()?
-                .generate(&app, &mut file);
+            }
+            .parse::<clap_complete::Shell>()?;
+            match sub_matches.value_of("output") {
+                Some(path) => {
+                    let mut file = std::fs::File::create(&path).map_err(|e| e.to_string())?;
+                    shell.generate(&app, &mut file);
+                }
+                None => {
+                    let mut buffer = Vec::new();
+                    shell.generate(&app, &mut buffer);
+                    let script = String::from_utf8(buffer).map_err(|e| e.to_string())?;
+                    println!("echo $'{}'", script.replace('\'', "\\'"));
+                    println!("exit 0")
+                }
+            }
         }
         _ => print_matches(vec![], &matches, &app),
     }
