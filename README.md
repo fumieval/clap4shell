@@ -68,8 +68,6 @@ Completion
 clap4shell clap4shell-completion bash -o ./bash-completion.sh < definition.yaml
 ```
 
-Note that clap does not support completion for subcommands yet (clap panics for some reason)
-
 Notes
 ----
 
