@@ -2,8 +2,6 @@ clap4shell: standalone clap wrapper for shell scripts
 ----
 
 [![clap4shell at crates.io](https://img.shields.io/crates/v/clap4shell.svg)](https://crates.io/crates/clap4shell)
-[![clap4shell at docs.rs](https://docs.rs/clap4shell/badge.svg)](https://docs.rs/clap4shell)
-
 
 `clap4shell` is a replacement for `getopt` based on [clap](https://github.com/clap-rs/clap).
 
