@@ -1,3 +1,4 @@
+use clap::ValueEnum;
 use clap::{App, Arg, ArgMatches};
 use clap_complete::Generator;
 use std::io::Read;
@@ -12,13 +13,26 @@ fn app() -> Result<(), String> {
         .into();
 
     let app_completion = App::new("clap4shell-completion")
-        .arg(Arg::new("shell").takes_value(true).required(true))
+        .about("Generate an autocompletion script")
+        .arg(
+            Arg::new("shell")
+                .takes_value(true)
+                .required(true)
+                .help("target shell")
+                .possible_values(
+                    clap_complete::Shell::value_variants()
+                        .iter()
+                        .map(|x| x.to_possible_value().unwrap()),
+                ),
+        )
         .arg(
             Arg::new("output")
                 .takes_value(true)
                 .required(true)
                 .short('o')
-                .long("output"),
+                .long("output")
+                .value_name("FILE")
+                .help("Write to file"),
         );
 
     let mut app = app_body.subcommand(app_completion);
