@@ -17,7 +17,6 @@ fn app() -> Result<(), String> {
         .arg(
             Arg::new("shell")
                 .takes_value(true)
-                .required(true)
                 .help("target shell")
                 .possible_values(
                     clap_complete::Shell::value_variants()
@@ -42,7 +41,14 @@ fn app() -> Result<(), String> {
 
     match matches.subcommand() {
         Some(("clap4shell-completion", sub_matches)) => {
-            let shell = sub_matches.value_of("shell").unwrap();
+            let shell = match sub_matches.value_of("shell") {
+                Some(x) => x.to_string(),
+                None => {
+                    let var = std::env::var_os("SHELL").expect("SHELL environment variable is not set");
+                    let path = std::path::Path::new(&var);
+                    path.file_name().unwrap().to_str().unwrap().to_string()
+                }
+            };
             let path = sub_matches.value_of("output").unwrap();
             let mut file = std::fs::File::create(&path).map_err(|e| e.to_string())?;
             shell
