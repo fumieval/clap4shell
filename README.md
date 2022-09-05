@@ -62,10 +62,16 @@ EOT
 Completion
 ----
 
-`clap4shell-completion <shell> -o <path>` subcommand generates an autocompletion script and writes the script to `path`.
+`clap4shell-completion <shell> -o <path>` subcommand generates an autocompletion script for `<shell>` and writes the script to `path`.
 
 ```sh
 clap4shell clap4shell-completion bash -o ./bash-completion.sh < definition.yaml
+```
+
+When "-o" is omitted, it prints an echo command that prints the script, followed by `exit 0`. Therefore this feature can be used transparently even if the output of `clap4shell` is passed to `eval`.
+
+```
+./foo.sh clap4shell-completion > ~/.zsh/_foo.sh
 ```
 
 Notes
