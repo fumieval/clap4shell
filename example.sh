@@ -22,6 +22,11 @@ args:
       long: mode
       help: option with a certain set of possible values
       possible_values: [ herbivore, carnivore, omnivore ]
+  - token:
+      long: token
+      help: this option can be specified via an environment variable too
+      env: CLAP4SHELL_TOKEN
+      takes_value: true
   - cmd:
       help: command
   - arg:

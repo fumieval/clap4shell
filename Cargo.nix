@@ -77,6 +77,7 @@ in
       [ "atty" ]
       [ "color" ]
       [ "default" ]
+      [ "env" ]
       [ "std" ]
       [ "strsim" ]
       [ "suggestions" ]
@@ -93,14 +94,19 @@ in
     };
   });
   
-  "registry+https://github.com/rust-lang/crates.io-index".clap-serde."0.5.0" = overridableMkRustCrate (profileName: rec {
+  "git+https://github.com/fumieval/clap-serde".clap-serde."0.5.0" = overridableMkRustCrate (profileName: rec {
     name = "clap-serde";
     version = "0.5.0";
-    registry = "registry+https://github.com/rust-lang/crates.io-index";
-    src = fetchCratesIo { inherit name version; sha256 = "56ac8f012b252f52efeb76bde73548882db672bca8f74e3dfcfca8b5490a2353"; };
+    registry = "git+https://github.com/fumieval/clap-serde";
+    src = fetchCrateGit {
+      url = https://github.com/fumieval/clap-serde;
+      name = "clap-serde";
+      version = "0.5.0";
+      rev = "9d99a62b6688fd5e4adfd8bbb69cd01153f1293c";};
     features = builtins.concatLists [
       [ "allow-deprecated" ]
       [ "default" ]
+      [ "env" ]
       [ "snake-case-key" ]
     ];
     dependencies = {
@@ -116,7 +122,7 @@ in
     src = fetchCrateLocal workspaceSrc;
     dependencies = {
       clap = rustPackages."registry+https://github.com/rust-lang/crates.io-index".clap."3.2.17" { inherit profileName; };
-      clap_serde = rustPackages."registry+https://github.com/rust-lang/crates.io-index".clap-serde."0.5.0" { inherit profileName; };
+      clap_serde = rustPackages."git+https://github.com/fumieval/clap-serde".clap-serde."0.5.0" { inherit profileName; };
       clap_complete = rustPackages."registry+https://github.com/rust-lang/crates.io-index".clap_complete."3.2.4" { inherit profileName; };
       serde_yaml = rustPackages."registry+https://github.com/rust-lang/crates.io-index".serde_yaml."0.9.10" { inherit profileName; };
       yaml_rust = rustPackages."registry+https://github.com/rust-lang/crates.io-index".yaml-rust."0.4.5" { inherit profileName; };
