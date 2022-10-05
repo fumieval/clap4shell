@@ -2,7 +2,7 @@
 name = "clap4shell"
 description = "rich getopts replacement for shell script"
 homepage = "https://github.com/fumieval/clap4shell"
-version = "0.3.1"
+version = "0.3.2"
 authors = ["Fumiaki Kinoshita <fumiexcel@gmail.com>"]
 edition = "2021"
 license = "MIT"
@@ -15,5 +15,5 @@ categories = ["command-line-utilities", "command-line-interface"]
 clap = { version = "3.2.17", features = ["env"] }
 yaml-rust = "0.4.5"
 serde_yaml = "0.9.10"
-clap-serde = { git = "https://github.com/fumieval/clap-serde", features = ["env"] }
+clap-serde = { version = "0.5.1", features = ["env"] }
 clap_complete = { version = "3.2.4" }

@@ -37,7 +37,7 @@ in
 {
   cargo2nixVersion = "0.11.0";
   workspace = {
-    clap4shell = rustPackages.unknown.clap4shell."0.3.1";
+    clap4shell = rustPackages.unknown.clap4shell."0.3.2";
   };
   "registry+https://github.com/rust-lang/crates.io-index".atty."0.2.14" = overridableMkRustCrate (profileName: rec {
     name = "atty";
@@ -94,15 +94,11 @@ in
     };
   });
   
-  "git+https://github.com/fumieval/clap-serde".clap-serde."0.5.0" = overridableMkRustCrate (profileName: rec {
+  "registry+https://github.com/rust-lang/crates.io-index".clap-serde."0.5.1" = overridableMkRustCrate (profileName: rec {
     name = "clap-serde";
-    version = "0.5.0";
-    registry = "git+https://github.com/fumieval/clap-serde";
-    src = fetchCrateGit {
-      url = https://github.com/fumieval/clap-serde;
-      name = "clap-serde";
-      version = "0.5.0";
-      rev = "9d99a62b6688fd5e4adfd8bbb69cd01153f1293c";};
+    version = "0.5.1";
+    registry = "registry+https://github.com/rust-lang/crates.io-index";
+    src = fetchCratesIo { inherit name version; sha256 = "f1d9609b451fd69eec0ecd379932d605a64bba1746397b31455962c8ba2fdfb7"; };
     features = builtins.concatLists [
       [ "allow-deprecated" ]
       [ "default" ]
@@ -115,14 +111,14 @@ in
     };
   });
   
-  "unknown".clap4shell."0.3.1" = overridableMkRustCrate (profileName: rec {
+  "unknown".clap4shell."0.3.2" = overridableMkRustCrate (profileName: rec {
     name = "clap4shell";
-    version = "0.3.1";
+    version = "0.3.2";
     registry = "unknown";
     src = fetchCrateLocal workspaceSrc;
     dependencies = {
       clap = rustPackages."registry+https://github.com/rust-lang/crates.io-index".clap."3.2.17" { inherit profileName; };
-      clap_serde = rustPackages."git+https://github.com/fumieval/clap-serde".clap-serde."0.5.0" { inherit profileName; };
+      clap_serde = rustPackages."registry+https://github.com/rust-lang/crates.io-index".clap-serde."0.5.1" { inherit profileName; };
       clap_complete = rustPackages."registry+https://github.com/rust-lang/crates.io-index".clap_complete."3.2.4" { inherit profileName; };
       serde_yaml = rustPackages."registry+https://github.com/rust-lang/crates.io-index".serde_yaml."0.9.10" { inherit profileName; };
       yaml_rust = rustPackages."registry+https://github.com/rust-lang/crates.io-index".yaml-rust."0.4.5" { inherit profileName; };

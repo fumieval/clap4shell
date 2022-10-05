@@ -42,8 +42,9 @@ dependencies = [
 
 [[package]]
 name = "clap-serde"
-version = "0.5.0"
-source = "git+https://github.com/fumieval/clap-serde#9d99a62b6688fd5e4adfd8bbb69cd01153f1293c"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f1d9609b451fd69eec0ecd379932d605a64bba1746397b31455962c8ba2fdfb7"
 dependencies = [
  "clap",
  "serde",
@@ -51,7 +52,7 @@ dependencies = [
 
 [[package]]
 name = "clap4shell"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "clap",
  "clap-serde",
