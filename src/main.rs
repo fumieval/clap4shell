@@ -98,6 +98,8 @@ fn print_matches(parents: Vec<&str>, matches: &ArgMatches, app: &App) {
             name
         );
         print_matches(subcommands, sub_app, sub_info);
+    } else {
+        println!("set -- {}", parents.join(" "));
     }
 }
 

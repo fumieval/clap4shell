@@ -44,6 +44,12 @@ args:
   - arg:
       help: command arguments
       multiple_values: true
+subcommands:
+  - ls:
+      about: Display a list of entities
+      args:
+        - entity:
+            multiple_values: true
 ```
 
 The schema is based on [clap_serde](https://docs.rs/clap-serde/latest/clap_serde/).
@@ -56,6 +62,8 @@ eval "$(clap4shell "$@" <<EOT
 EOT
 )"
 ```
+
+Subcommands are bound as positional parameters (`$1, $2, ...`).
 
 Completion
 ----

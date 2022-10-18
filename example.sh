@@ -34,13 +34,14 @@ args:
       multiple_values: true
 subcommands:
   - ls:
-      bin_name: ls
       about: Display a list of entities
       args:
         - entity:
             multiple_values: true
 EOT
 )"
+
+echo "subcommands: $@"
 
 # Print all variables
 declare -p | tail
