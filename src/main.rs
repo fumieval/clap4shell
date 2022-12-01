@@ -89,14 +89,6 @@ fn print_matches(parents: Vec<&str>, matches: &ArgMatches, app: &App) {
             .expect("subcommand info");
         let mut subcommands = parents.clone();
         subcommands.push(name);
-        println!(
-            "{}={}",
-            std::iter::once("subcommand")
-                .chain(parents)
-                .collect::<Vec<&str>>()
-                .join("_"),
-            name
-        );
         print_matches(subcommands, sub_app, sub_info);
     } else {
         println!("set -- {}", parents.join(" "));
