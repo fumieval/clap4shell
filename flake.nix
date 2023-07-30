@@ -23,6 +23,7 @@
           clap4shell = (rustPkgs.workspace.clap4shell {}).bin;
           default = packages.clap4shell;
         };
+        defaultPackage = packages.default;
         apps = rec {
           clap4shell = { type = "app"; program = "${packages.default}/bin/clap4shell"; };
           default = clap4shell;
