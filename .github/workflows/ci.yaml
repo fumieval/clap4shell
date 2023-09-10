@@ -12,4 +12,7 @@ jobs:
     - uses: cachix/install-nix-action@v22
     - name: build
       run: |
-        nix build "." --print-out-paths --no-link -L
+        nix build "." -L --print-out-paths --no-link
+    - name: build aarch64
+      run: |
+        nix build .#cross.x86_64-linux.packages.aarch64-linux.clap4shell -L --print-out-paths --no-link
