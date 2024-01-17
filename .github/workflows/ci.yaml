@@ -1,0 +1,18 @@
+name: build
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: cachix/install-nix-action@v22
+    - name: build
+      run: |
+        nix build "." -L --print-out-paths --no-link
+    - name: build aarch64
+      run: |
+        nix build .#cross.x86_64-linux.packages.aarch64-linux.clap4shell -L --print-out-paths --no-link
