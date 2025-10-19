@@ -1,6 +1,6 @@
 {
   inputs = {
-    cargo2nix.url = "github:cargo2nix/cargo2nix/release-0.11.0";
+    cargo2nix.url = "github:cargo2nix/cargo2nix/v0.12.0";
     flake-utils.follows = "cargo2nix/flake-utils";
     nixpkgs.follows = "cargo2nix/nixpkgs";
   };
@@ -14,20 +14,22 @@
         };
 
         rustPkgs = pkgs.rustBuilder.makePackageSet {
-          rustVersion = "1.61.0";
+          rustVersion = "1.82.0";
           packageFun = import ./Cargo.nix;
         };
 
       in rec {
         packages = {
-          clap4shell = (rustPkgs.workspace.clap4shell {}).bin;
+          clap4shell = (rustPkgs.workspace.clap4shell {});
           default = packages.clap4shell;
         };
         defaultPackage = packages.default;
         apps = rec {
           clap4shell = { type = "app"; program = "${packages.default}/bin/clap4shell"; };
           default = clap4shell;
+          cargo2nix = cargo2nix.apps.${system}.default;
         };
+        devShell.default = rustPkgs.workspaceShell {};
       }
     )// {
     cross."x86_64-linux".packages."aarch64-linux" =
@@ -44,7 +46,7 @@
       };
     in
     {
-      clap4shell = (rustPkgs.workspace.clap4shell { }).bin;
+      clap4shell = (rustPkgs.workspace.clap4shell { });
     };
   };
 }

@@ -36,7 +36,7 @@ fn app() -> Result<(), String> {
     let mut app = app_body.subcommand(app_completion);
     app.build();
 
-    let matches = app.clone().get_matches_safe().map_err(|e| e.to_string())?;
+    let matches = app.clone().try_get_matches().map_err(|e| e.to_string())?;
 
     match matches.subcommand() {
         Some(("clap4shell-completion", sub_matches)) => {
@@ -74,12 +74,12 @@ fn print_matches(parents: Vec<&str>, matches: &ArgMatches, app: &App) {
     for arg in app.get_arguments() {
         let k = arg.get_name();
         if arg.is_takes_value_set() || arg.is_positional() {
-            if let Some(v) = matches.values_of(k) {
-                let values: Vec<&str> = v.collect();
+            if let Some(v) = matches.get_many::<String>(k) {
+                let values: Vec<&str> = v.map(|s| s.as_str()).collect();
                 println!("{}='{}'", k, values.join("\n").replace('\'', "\\'"))
             }
         } else {
-            println!("{}={}", k, matches.occurrences_of(k));
+            println!("{}={}", k, matches.get_count(k));
         }
     }
     if let Some((name, sub_app)) = matches.subcommand() {
