@@ -12,8 +12,8 @@ categories = ["command-line-utilities", "command-line-interface"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = { version = "3.2.17", features = ["env"] }
+clap = { version = "3.2.25", features = ["env"] }
 yaml-rust = "0.4.5"
-serde_yaml = "0.9.10"
+serde_yaml = "0.9.34"
 clap-serde = { version = "0.5.1", features = ["env"] }
-clap_complete = { version = "3.2.4" }
+clap_complete = { version = "3.2.5" }
