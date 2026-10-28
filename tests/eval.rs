@@ -159,6 +159,33 @@ fn env_fills_a_missing_value() {
 }
 
 #[test]
+fn completion_shell_defaults_to_the_shell_env() {
+    let yaml = "name: demo\nbin_name: demo\n";
+    let _guard = ENV_LOCK.lock().unwrap_or_else(|err| err.into_inner());
+    let previous = std::env::var_os("SHELL");
+    unsafe { std::env::set_var("SHELL", "/usr/local/bin/pwsh") };
+    let pwsh = eval(yaml, ["demo", "clap4shell-completion"]);
+    unsafe { std::env::set_var("SHELL", "/bin/tcsh") };
+    let unknown = eval(yaml, ["demo", "clap4shell-completion"]);
+    match previous {
+        Some(value) => unsafe { std::env::set_var("SHELL", value) },
+        None => unsafe { std::env::remove_var("SHELL") },
+    }
+    assert!(pwsh.unwrap().contains("Register-ArgumentCompleter"));
+    let error = unknown.unwrap_err();
+    assert!(error.usage_kind().is_none(), "{error}");
+    assert!(error.to_string().contains("/bin/tcsh"), "{error}");
+}
+
+#[test]
+fn single_value_name_and_default_survive_list_setters() {
+    let yaml = "name: demo\ncolor: never\nargs:\n  - host:\n      long: host\n      value_name: HOST\n      default_value: localhost\n";
+    assert_eq!(eval(yaml, ["demo"]).unwrap(), "host='localhost'\nset -- \n");
+    let help = eval(yaml, ["demo", "--help"]).unwrap_err().to_string();
+    assert!(help.contains("--host <HOST>"), "{help}");
+}
+
+#[test]
 fn global_values_are_printed_once() {
     let yaml = r#"
 name: demo

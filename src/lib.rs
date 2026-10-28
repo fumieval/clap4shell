@@ -92,8 +92,12 @@ fn shell_names() -> Vec<String> {
 
 fn render_completion(cmd: &Command, matches: &clap::ArgMatches) -> Result<String, Error> {
     let shell = match matches.get_one::<String>("shell") {
-        Some(name) => parse_shell(name).map_err(Error::Message)?,
-        None => shell_from_env()?,
+        Some(name) => parse_shell(name)?,
+        None => {
+            let path = std::env::var_os("SHELL")
+                .ok_or_else(|| Error::Message("SHELL environment variable is not set".into()))?;
+            parse_shell(&path)?
+        }
     };
     let bin_name = cmd
         .get_bin_name()
@@ -111,25 +115,13 @@ fn render_completion(cmd: &Command, matches: &clap::ArgMatches) -> Result<String
     }
 }
 
-fn shell_from_env() -> Result<clap_complete::Shell, Error> {
-    let value = std::env::var_os("SHELL")
-        .ok_or_else(|| Error::Message("SHELL environment variable is not set".into()))?;
-    let name = std::path::Path::new(&value)
-        .file_name()
-        .and_then(|name| name.to_str())
-        .ok_or_else(|| Error::Message("SHELL is not valid UTF-8".into()))?;
-    parse_shell(name).map_err(Error::Message)
-}
-
-fn parse_shell(name: &str) -> Result<clap_complete::Shell, String> {
-    let normalized = match name {
-        "pwsh" | "powershell.exe" => "powershell",
-        other => other,
-    };
-    normalized.parse().map_err(|_| {
-        format!(
-            "unknown shell `{name}`; expected {}",
+fn parse_shell(path: impl AsRef<std::path::Path>) -> Result<clap_complete::Shell, Error> {
+    let path = path.as_ref();
+    clap_complete::Shell::from_shell_path(path).ok_or_else(|| {
+        Error::Message(format!(
+            "unknown shell `{}`; expected {}",
+            path.display(),
             shell_names().join(", ")
-        )
+        ))
     })
 }

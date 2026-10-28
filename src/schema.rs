@@ -4,19 +4,14 @@ use std::ffi::OsString;
 use clap::builder::{
     BoolishValueParser, OsStringValueParser, PossibleValuesParser, TypedValueParser, ValueParser,
 };
+use clap::{Arg, ArgAction, ArgGroup, ColorChoice, Command, ValueHint};
+use serde::Deserialize;
+use serde::de::{self, DeserializeOwned, Deserializer};
 
-macro_rules! apply_str {
+macro_rules! apply {
     ($target:ident, $value:expr, $method:ident) => {
         if let Some(value) = &$value {
-            $target = $target.$method(value);
-        }
-    };
-}
-
-macro_rules! apply_char {
-    ($target:ident, $value:expr, $method:ident) => {
-        if let Some(value) = $value {
-            $target = $target.$method(value);
+            $target = $target.$method(value.clone());
         }
     };
 }
@@ -29,9 +24,6 @@ macro_rules! from_str_parser {
         ValueParser::from(parse)
     }};
 }
-use clap::{Arg, ArgAction, ArgGroup, ColorChoice, Command, ValueHint};
-use serde::Deserialize;
-use serde::de::{self, DeserializeOwned, Deserializer};
 
 pub(crate) fn command_from_yaml(yaml: &str) -> Result<Command, String> {
     let spec: CommandSpec = serde_yaml::from_str(yaml).map_err(|err| err.to_string())?;
@@ -43,103 +35,57 @@ pub(crate) fn command_from_yaml(yaml: &str) -> Result<Command, String> {
 }
 
 fn build_command(name: &str, spec: &CommandSpec) -> Result<Command, String> {
-    let mut cmd = Command::new(name.to_owned());
-    apply_str!(cmd, spec.bin_name, bin_name);
-    apply_str!(cmd, spec.display_name, display_name);
-    apply_str!(cmd, spec.version, version);
-    apply_str!(cmd, spec.long_version, long_version);
-    apply_str!(cmd, spec.about, about);
-    apply_str!(cmd, spec.long_about, long_about);
-    apply_str!(cmd, spec.author, author);
-    apply_str!(cmd, spec.before_help, before_help);
-    apply_str!(cmd, spec.before_long_help, before_long_help);
-    apply_str!(cmd, spec.after_help, after_help);
-    apply_str!(cmd, spec.after_long_help, after_long_help);
-    apply_str!(cmd, spec.help_template, help_template);
-    apply_str!(cmd, spec.override_usage, override_usage);
-    apply_str!(cmd, spec.subcommand_help_heading, subcommand_help_heading);
-    apply_str!(cmd, spec.next_help_heading, next_help_heading);
-    apply_str!(cmd, spec.alias, alias);
-    apply_str!(cmd, spec.visible_alias, visible_alias);
-    apply_str!(cmd, spec.long_flag, long_flag);
-    apply_str!(cmd, spec.long_flag_alias, long_flag_alias);
-    apply_str!(cmd, spec.visible_long_flag_alias, visible_long_flag_alias);
-    apply_char!(cmd, spec.short_flag, short_flag);
-    apply_char!(cmd, spec.short_flag_alias, short_flag_alias);
-    apply_char!(cmd, spec.visible_short_flag_alias, visible_short_flag_alias);
-    if !spec.aliases.is_empty() {
-        cmd = cmd.aliases(spec.aliases.iter());
-    }
-    if !spec.visible_aliases.is_empty() {
-        cmd = cmd.visible_aliases(spec.visible_aliases.iter());
-    }
-    if !spec.long_flag_aliases.is_empty() {
-        cmd = cmd.long_flag_aliases(spec.long_flag_aliases.iter());
-    }
-    if !spec.visible_long_flag_aliases.is_empty() {
-        cmd = cmd.visible_long_flag_aliases(spec.visible_long_flag_aliases.iter());
-    }
-    if !spec.short_flag_aliases.is_empty() {
-        cmd = cmd.short_flag_aliases(spec.short_flag_aliases.iter().copied());
-    }
-    if !spec.visible_short_flag_aliases.is_empty() {
-        cmd = cmd.visible_short_flag_aliases(spec.visible_short_flag_aliases.iter().copied());
-    }
-    cmd = when(cmd, spec.arg_required_else_help, |cmd| {
-        cmd.arg_required_else_help(true)
-    });
-    cmd = when(cmd, spec.subcommand_required, |cmd| {
-        cmd.subcommand_required(true)
-    });
-    cmd = when(cmd, spec.subcommand_negates_reqs, |cmd| {
-        cmd.subcommand_negates_reqs(true)
-    });
-    cmd = when(cmd, spec.args_conflicts_with_subcommands, |cmd| {
-        cmd.args_conflicts_with_subcommands(true)
-    });
-    cmd = when(cmd, spec.args_override_self, |cmd| {
-        cmd.args_override_self(true)
-    });
-    cmd = when(cmd, spec.propagate_version, |cmd| {
-        cmd.propagate_version(true)
-    });
-    cmd = when(cmd, spec.infer_subcommands, |cmd| {
-        cmd.infer_subcommands(true)
-    });
-    cmd = when(cmd, spec.infer_long_args, |cmd| cmd.infer_long_args(true));
-    cmd = when(cmd, spec.allow_external_subcommands, |cmd| {
-        cmd.allow_external_subcommands(true)
-    });
-    cmd = when(cmd, spec.allow_negative_numbers, |cmd| {
-        cmd.allow_negative_numbers(true)
-    });
-    cmd = when(cmd, spec.trailing_var_arg, |cmd| cmd.trailing_var_arg(true));
-    cmd = when(cmd, spec.dont_delimit_trailing_values, |cmd| {
-        cmd.dont_delimit_trailing_values(true)
-    });
-    cmd = when(cmd, spec.disable_help_flag, |cmd| {
-        cmd.disable_help_flag(true)
-    });
-    cmd = when(cmd, spec.disable_help_subcommand, |cmd| {
-        cmd.disable_help_subcommand(true)
-    });
-    cmd = when(cmd, spec.disable_version_flag, |cmd| {
-        cmd.disable_version_flag(true)
-    });
-    cmd = when(cmd, spec.disable_colored_help, |cmd| {
-        cmd.disable_colored_help(true)
-    });
-    cmd = when(cmd, spec.next_line_help, |cmd| cmd.next_line_help(true));
-    cmd = when(cmd, spec.hide, |cmd| cmd.hide(true));
-    if let Some(order) = spec.display_order {
-        cmd = cmd.display_order(order);
-    }
-    if let Some(width) = spec.term_width {
-        cmd = cmd.term_width(width);
-    }
-    if let Some(width) = spec.max_term_width {
-        cmd = cmd.max_term_width(width);
-    }
+    let mut cmd = Command::new(name.to_owned())
+        .aliases(&spec.aliases)
+        .visible_aliases(&spec.visible_aliases)
+        .long_flag_aliases(&spec.long_flag_aliases)
+        .visible_long_flag_aliases(&spec.visible_long_flag_aliases)
+        .short_flag_aliases(spec.short_flag_aliases.iter().copied())
+        .visible_short_flag_aliases(spec.visible_short_flag_aliases.iter().copied())
+        .arg_required_else_help(spec.arg_required_else_help)
+        .subcommand_required(spec.subcommand_required)
+        .subcommand_negates_reqs(spec.subcommand_negates_reqs)
+        .args_conflicts_with_subcommands(spec.args_conflicts_with_subcommands)
+        .args_override_self(spec.args_override_self)
+        .propagate_version(spec.propagate_version)
+        .infer_subcommands(spec.infer_subcommands)
+        .infer_long_args(spec.infer_long_args)
+        .allow_external_subcommands(spec.allow_external_subcommands)
+        .allow_negative_numbers(spec.allow_negative_numbers)
+        .trailing_var_arg(spec.trailing_var_arg)
+        .dont_delimit_trailing_values(spec.dont_delimit_trailing_values)
+        .disable_help_flag(spec.disable_help_flag)
+        .disable_help_subcommand(spec.disable_help_subcommand)
+        .disable_version_flag(spec.disable_version_flag)
+        .disable_colored_help(spec.disable_colored_help)
+        .next_line_help(spec.next_line_help)
+        .hide(spec.hide);
+    apply!(cmd, spec.bin_name, bin_name);
+    apply!(cmd, spec.display_name, display_name);
+    apply!(cmd, spec.version, version);
+    apply!(cmd, spec.long_version, long_version);
+    apply!(cmd, spec.about, about);
+    apply!(cmd, spec.long_about, long_about);
+    apply!(cmd, spec.author, author);
+    apply!(cmd, spec.before_help, before_help);
+    apply!(cmd, spec.before_long_help, before_long_help);
+    apply!(cmd, spec.after_help, after_help);
+    apply!(cmd, spec.after_long_help, after_long_help);
+    apply!(cmd, spec.help_template, help_template);
+    apply!(cmd, spec.override_usage, override_usage);
+    apply!(cmd, spec.subcommand_help_heading, subcommand_help_heading);
+    apply!(cmd, spec.next_help_heading, next_help_heading);
+    apply!(cmd, spec.alias, alias);
+    apply!(cmd, spec.visible_alias, visible_alias);
+    apply!(cmd, spec.long_flag, long_flag);
+    apply!(cmd, spec.long_flag_alias, long_flag_alias);
+    apply!(cmd, spec.visible_long_flag_alias, visible_long_flag_alias);
+    apply!(cmd, spec.short_flag, short_flag);
+    apply!(cmd, spec.short_flag_alias, short_flag_alias);
+    apply!(cmd, spec.visible_short_flag_alias, visible_short_flag_alias);
+    apply!(cmd, spec.display_order, display_order);
+    apply!(cmd, spec.term_width, term_width);
+    apply!(cmd, spec.max_term_width, max_term_width);
     if let Some(color) = spec.color {
         cmd = cmd.color(color.into());
     }
@@ -175,31 +121,15 @@ fn build_group(name: &str, spec: &GroupSpec) -> Result<ArgGroup, String> {
     if name.is_empty() {
         return Err("group name must not be empty".into());
     }
-    let mut group = ArgGroup::new(name.to_owned());
-    if let Some(arg) = &spec.arg {
-        group = group.arg(arg);
-    }
-    if !spec.args.is_empty() {
-        group = group.args(spec.args.iter());
-    }
-    if let Some(multiple) = spec.multiple {
-        group = group.multiple(multiple);
-    }
-    if let Some(required) = spec.required {
-        group = group.required(required);
-    }
-    if let Some(conflict) = &spec.conflicts_with {
-        group = group.conflicts_with(conflict);
-    }
-    if !spec.conflicts_with_all.is_empty() {
-        group = group.conflicts_with_all(spec.conflicts_with_all.iter());
-    }
-    if let Some(requires) = &spec.requires {
-        group = group.requires(requires);
-    }
-    if !spec.requires_all.is_empty() {
-        group = group.requires_all(spec.requires_all.iter());
-    }
+    let mut group = ArgGroup::new(name.to_owned())
+        .args(&spec.args)
+        .conflicts_with_all(&spec.conflicts_with_all)
+        .requires_all(&spec.requires_all);
+    apply!(group, spec.arg, arg);
+    apply!(group, spec.multiple, multiple);
+    apply!(group, spec.required, required);
+    apply!(group, spec.conflicts_with, conflicts_with);
+    apply!(group, spec.requires, requires);
     Ok(group)
 }
 
@@ -223,62 +153,56 @@ fn build_arg(name: &str, spec: &ArgSpec) -> Result<Arg, String> {
         ));
     }
 
-    let mut arg = Arg::new(name.to_owned());
-    apply_str!(arg, spec.help, help);
-    apply_str!(arg, spec.long_help, long_help);
-    apply_str!(arg, spec.help_heading, help_heading);
-    apply_str!(arg, spec.long, long);
-    apply_str!(arg, spec.alias, alias);
-    apply_str!(arg, spec.visible_alias, visible_alias);
-    apply_str!(arg, spec.value_name, value_name);
-    apply_str!(arg, spec.env, env);
-    apply_str!(arg, spec.default_value, default_value);
-    apply_str!(arg, spec.default_missing_value, default_missing_value);
-    apply_str!(arg, spec.value_terminator, value_terminator);
-    apply_str!(arg, spec.conflicts_with, conflicts_with);
-    apply_str!(arg, spec.requires, requires);
-    apply_str!(arg, spec.overrides_with, overrides_with);
-    apply_str!(arg, spec.group, group);
-    apply_str!(arg, spec.required_unless_present, required_unless_present);
-    apply_char!(arg, spec.short, short);
-    apply_char!(arg, spec.short_alias, short_alias);
-    apply_char!(arg, spec.visible_short_alias, visible_short_alias);
-    apply_char!(arg, spec.value_delimiter, value_delimiter);
-    if !spec.aliases.is_empty() {
-        arg = arg.aliases(spec.aliases.iter());
-    }
-    if !spec.visible_aliases.is_empty() {
-        arg = arg.visible_aliases(spec.visible_aliases.iter());
-    }
-    if !spec.short_aliases.is_empty() {
-        arg = arg.short_aliases(spec.short_aliases.iter().copied());
-    }
-    if !spec.visible_short_aliases.is_empty() {
-        arg = arg.visible_short_aliases(spec.visible_short_aliases.iter().copied());
-    }
-    if !spec.value_names.is_empty() {
-        arg = arg.value_names(spec.value_names.iter());
-    }
-    if !spec.default_values.is_empty() {
-        arg = arg.default_values(spec.default_values.iter());
-    }
-    if !spec.conflicts_with_all.is_empty() {
-        arg = arg.conflicts_with_all(spec.conflicts_with_all.iter());
-    }
-    if !spec.requires_all.is_empty() {
-        for required in &spec.requires_all {
-            arg = arg.requires(required);
-        }
-    }
-    if !spec.overrides_with_all.is_empty() {
-        arg = arg.overrides_with_all(spec.overrides_with_all.iter());
-    }
-    if !spec.required_unless_present_any.is_empty() {
-        arg = arg.required_unless_present_any(spec.required_unless_present_any.iter());
-    }
-    if !spec.required_unless_present_all.is_empty() {
-        arg = arg.required_unless_present_all(spec.required_unless_present_all.iter());
-    }
+    // `value_names` and `default_values` replace what `value_name` and
+    // `default_value` set, so the list setters must run first.
+    let mut arg = Arg::new(name.to_owned())
+        .aliases(&spec.aliases)
+        .visible_aliases(&spec.visible_aliases)
+        .short_aliases(spec.short_aliases.iter().copied())
+        .visible_short_aliases(spec.visible_short_aliases.iter().copied())
+        .value_names(&spec.value_names)
+        .default_values(&spec.default_values)
+        .conflicts_with_all(&spec.conflicts_with_all)
+        .requires_all(&spec.requires_all)
+        .overrides_with_all(&spec.overrides_with_all)
+        .required_unless_present_any(&spec.required_unless_present_any)
+        .required_unless_present_all(&spec.required_unless_present_all)
+        .ignore_case(spec.ignore_case)
+        .hide_possible_values(spec.hide_possible_values)
+        .hide_env(spec.hide_env)
+        .hide_env_values(spec.hide_env_values)
+        .global(spec.global)
+        .hide(spec.hide)
+        .hide_long_help(spec.hide_long_help)
+        .hide_short_help(spec.hide_short_help)
+        .exclusive(spec.exclusive)
+        .last(spec.last)
+        .allow_hyphen_values(spec.allow_hyphen_values)
+        .require_equals(spec.require_equals)
+        .next_line_help(spec.next_line_help)
+        .required(spec.required);
+    apply!(arg, spec.help, help);
+    apply!(arg, spec.long_help, long_help);
+    apply!(arg, spec.help_heading, help_heading);
+    apply!(arg, spec.long, long);
+    apply!(arg, spec.alias, alias);
+    apply!(arg, spec.visible_alias, visible_alias);
+    apply!(arg, spec.value_name, value_name);
+    apply!(arg, spec.env, env);
+    apply!(arg, spec.default_value, default_value);
+    apply!(arg, spec.default_missing_value, default_missing_value);
+    apply!(arg, spec.value_terminator, value_terminator);
+    apply!(arg, spec.conflicts_with, conflicts_with);
+    apply!(arg, spec.requires, requires);
+    apply!(arg, spec.overrides_with, overrides_with);
+    apply!(arg, spec.group, group);
+    apply!(arg, spec.required_unless_present, required_unless_present);
+    apply!(arg, spec.short, short);
+    apply!(arg, spec.short_alias, short_alias);
+    apply!(arg, spec.visible_short_alias, visible_short_alias);
+    apply!(arg, spec.value_delimiter, value_delimiter);
+    apply!(arg, spec.index, index);
+    apply!(arg, spec.display_order, display_order);
     if let Some(values) = &spec.possible_values {
         arg = arg.value_parser(PossibleValuesParser::new(values.clone()));
     } else if let Some(kind) = spec.value_parser {
@@ -287,30 +211,6 @@ fn build_arg(name: &str, spec: &ArgSpec) -> Result<Arg, String> {
     if let Some(hint) = spec.value_hint {
         arg = arg.value_hint(ValueHint::from(hint));
     }
-    if let Some(index) = spec.index {
-        arg = arg.index(index);
-    }
-    if let Some(order) = spec.display_order {
-        arg = arg.display_order(order);
-    }
-    arg = when(arg, spec.ignore_case, |arg| arg.ignore_case(true));
-    arg = when(arg, spec.hide_possible_values, |arg| {
-        arg.hide_possible_values(true)
-    });
-    arg = when(arg, spec.hide_env, |arg| arg.hide_env(true));
-    arg = when(arg, spec.hide_env_values, |arg| arg.hide_env_values(true));
-    arg = when(arg, spec.global, |arg| arg.global(true));
-    arg = when(arg, spec.hide, |arg| arg.hide(true));
-    arg = when(arg, spec.hide_long_help, |arg| arg.hide_long_help(true));
-    arg = when(arg, spec.hide_short_help, |arg| arg.hide_short_help(true));
-    arg = when(arg, spec.exclusive, |arg| arg.exclusive(true));
-    arg = when(arg, spec.last, |arg| arg.last(true));
-    arg = when(arg, spec.allow_hyphen_values, |arg| {
-        arg.allow_hyphen_values(true)
-    });
-    arg = when(arg, spec.require_equals, |arg| arg.require_equals(true));
-    arg = when(arg, spec.next_line_help, |arg| arg.next_line_help(true));
-    arg = arg.required(spec.required);
 
     if let Some(num_args) = resolved_num_args(name, spec)? {
         arg = apply_num_args(arg, &num_args)?;
@@ -428,10 +328,6 @@ fn parse_bound(text: &str) -> Result<Option<usize>, String> {
 
 fn to_usize(value: u64) -> Result<usize, String> {
     usize::try_from(value).map_err(|_| format!("num_args {value} does not fit usize"))
-}
-
-fn when<T>(value: T, yes: bool, f: impl FnOnce(T) -> T) -> T {
-    if yes { f(value) } else { value }
 }
 
 fn lossy_os_string(value: OsString) -> String {
