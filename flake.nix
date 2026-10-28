@@ -1,52 +1,62 @@
 {
-  inputs = {
-    cargo2nix.url = "github:cargo2nix/cargo2nix/v0.12.0";
-    flake-utils.follows = "cargo2nix/flake-utils";
-    nixpkgs.follows = "cargo2nix/nixpkgs";
-  };
+  description = "rich getopts replacement for shell scripts";
 
-  outputs = inputs: with inputs;
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = import nixpkgs {
-          inherit system;
-          overlays = [cargo2nix.overlays.default];
-        };
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-        rustPkgs = pkgs.rustBuilder.makePackageSet {
-          rustVersion = "1.82.0";
-          packageFun = import ./Cargo.nix;
-        };
-
-      in rec {
-        packages = {
-          clap4shell = (rustPkgs.workspace.clap4shell {});
-          default = packages.clap4shell;
-        };
-        defaultPackage = packages.default;
-        apps = rec {
-          clap4shell = { type = "app"; program = "${packages.default}/bin/clap4shell"; };
-          default = clap4shell;
-          cargo2nix = cargo2nix.apps.${system}.default;
-        };
-        devShell.default = rustPkgs.workspaceShell {};
-      }
-    )// {
-    cross."x86_64-linux".packages."aarch64-linux" =
+  outputs =
+    { self, nixpkgs }:
     let
-      pkgs = import nixpkgs {
-        overlays = [ cargo2nix.overlays.default ];
-        localSystem = "x86_64-linux";
-        crossSystem.config = "aarch64-unknown-linux-gnu";
-      };
-      rustPkgs = pkgs.rustBuilder.makePackageSet {
-        rustVersion = "1.61.0";
-        packageFun = import ./Cargo.nix;
-        target = "aarch64-unknown-linux-gnu";
-      };
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+        "x86_64-darwin"
+        "aarch64-darwin"
+      ];
+      forAllSystems = f: nixpkgs.lib.genAttrs systems (system: f (import nixpkgs { inherit system; }));
+      version = (builtins.fromTOML (builtins.readFile ./Cargo.toml)).package.version;
+      mkPackage =
+        pkgs:
+        pkgs.rustPlatform.buildRustPackage {
+          pname = "clap4shell";
+          inherit version;
+          src = ./.;
+          cargoLock.lockFile = ./Cargo.lock;
+          doCheck = pkgs.stdenv.buildPlatform.canExecute pkgs.stdenv.hostPlatform;
+          meta = {
+            description = "rich getopts replacement for shell scripts";
+            homepage = "https://github.com/fumieval/clap4shell";
+            license = pkgs.lib.licenses.mit;
+            mainProgram = "clap4shell";
+          };
+        };
     in
     {
-      clap4shell = (rustPkgs.workspace.clap4shell { });
+      packages = forAllSystems (
+        pkgs:
+        {
+          clap4shell = mkPackage pkgs;
+          default = mkPackage pkgs;
+        }
+        // pkgs.lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "x86_64-linux") {
+          clap4shell-aarch64 = mkPackage pkgs.pkgsCross.aarch64-multiplatform;
+        }
+      );
+      apps = forAllSystems (pkgs: {
+        default = {
+          type = "app";
+          program = "${mkPackage pkgs}/bin/clap4shell";
+        };
+      });
+      devShells = forAllSystems (pkgs: {
+        default = pkgs.mkShell {
+          inputsFrom = [ (mkPackage pkgs) ];
+          packages = [
+            pkgs.cargo
+            pkgs.rustc
+            pkgs.clippy
+            pkgs.rustfmt
+          ];
+        };
+      });
     };
-  };
 }
