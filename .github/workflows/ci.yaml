@@ -9,13 +9,13 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        runner: [ ubuntu-latest, ubuntu-24.04-arm ]
+    runs-on: ${{ matrix.runner }}
     steps:
     - uses: actions/checkout@v7
     - uses: cachix/install-nix-action@v31
     - name: build
       run: |
         nix build ".#default" -L --print-out-paths --no-link
-    - name: build aarch64
-      run: |
-        nix build .#clap4shell-aarch64 -L --print-out-paths --no-link

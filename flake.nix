@@ -21,7 +21,6 @@
           inherit version;
           src = ./.;
           cargoLock.lockFile = ./Cargo.lock;
-          doCheck = pkgs.stdenv.buildPlatform.canExecute pkgs.stdenv.hostPlatform;
           meta = {
             description = "rich getopts replacement for shell scripts";
             homepage = "https://github.com/fumieval/clap4shell";
@@ -31,16 +30,10 @@
         };
     in
     {
-      packages = forAllSystems (
-        pkgs:
-        {
-          clap4shell = mkPackage pkgs;
-          default = mkPackage pkgs;
-        }
-        // pkgs.lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "x86_64-linux") {
-          clap4shell-aarch64 = mkPackage pkgs.pkgsCross.aarch64-multiplatform;
-        }
-      );
+      packages = forAllSystems (pkgs: {
+        clap4shell = mkPackage pkgs;
+        default = mkPackage pkgs;
+      });
       apps = forAllSystems (pkgs: {
         default = {
           type = "app";
