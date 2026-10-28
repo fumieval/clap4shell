@@ -26,7 +26,7 @@ macro_rules! from_str_parser {
 }
 
 pub(crate) fn command_from_yaml(yaml: &str) -> Result<Command, String> {
-    let spec: CommandSpec = serde_yaml::from_str(yaml).map_err(|err| err.to_string())?;
+    let spec: CommandSpec = yaml_serde::from_str(yaml).map_err(|err| err.to_string())?;
     let name = spec
         .name
         .clone()
@@ -632,18 +632,18 @@ where
     D: Deserializer<'de>,
     T: DeserializeOwned + Default,
 {
-    let value = serde_yaml::Value::deserialize(deserializer)?;
+    let value = yaml_serde::Value::deserialize(deserializer)?;
     named_from_value(value).map_err(de::Error::custom)
 }
 
-fn named_from_value<T>(value: serde_yaml::Value) -> Result<Vec<(String, T)>, String>
+fn named_from_value<T>(value: yaml_serde::Value) -> Result<Vec<(String, T)>, String>
 where
     T: DeserializeOwned + Default,
 {
     match value {
-        serde_yaml::Value::Null => Ok(Vec::new()),
-        serde_yaml::Value::Sequence(items) => items.into_iter().map(one_entry).collect(),
-        serde_yaml::Value::Mapping(map) => map
+        yaml_serde::Value::Null => Ok(Vec::new()),
+        yaml_serde::Value::Sequence(items) => items.into_iter().map(one_entry).collect(),
+        yaml_serde::Value::Mapping(map) => map
             .into_iter()
             .map(|(key, value)| Ok((value_string(key)?, spec_from_value(value)?)))
             .collect(),
@@ -654,11 +654,11 @@ where
     }
 }
 
-fn one_entry<T>(value: serde_yaml::Value) -> Result<(String, T), String>
+fn one_entry<T>(value: yaml_serde::Value) -> Result<(String, T), String>
 where
     T: DeserializeOwned + Default,
 {
-    let serde_yaml::Value::Mapping(map) = value else {
+    let yaml_serde::Value::Mapping(map) = value else {
         return Err("each entry must be a single-key map".into());
     };
     if map.len() != 1 {
@@ -668,32 +668,32 @@ where
     Ok((value_string(key)?, spec_from_value(value)?))
 }
 
-fn spec_from_value<T>(value: serde_yaml::Value) -> Result<T, String>
+fn spec_from_value<T>(value: yaml_serde::Value) -> Result<T, String>
 where
     T: DeserializeOwned + Default,
 {
     match value {
-        serde_yaml::Value::Null => Ok(T::default()),
-        other => serde_yaml::from_value(other).map_err(|err| err.to_string()),
+        yaml_serde::Value::Null => Ok(T::default()),
+        other => yaml_serde::from_value(other).map_err(|err| err.to_string()),
     }
 }
 
-fn value_string(value: serde_yaml::Value) -> Result<String, String> {
+fn value_string(value: yaml_serde::Value) -> Result<String, String> {
     match value {
-        serde_yaml::Value::String(text) => Ok(text),
+        yaml_serde::Value::String(text) => Ok(text),
         other => Err(format!("expected a string, got {}", value_kind(&other))),
     }
 }
 
-fn value_kind(value: &serde_yaml::Value) -> &'static str {
+fn value_kind(value: &yaml_serde::Value) -> &'static str {
     match value {
-        serde_yaml::Value::Null => "null",
-        serde_yaml::Value::Bool(_) => "a boolean",
-        serde_yaml::Value::Number(_) => "a number",
-        serde_yaml::Value::String(_) => "a string",
-        serde_yaml::Value::Sequence(_) => "a list",
-        serde_yaml::Value::Mapping(_) => "a map",
-        serde_yaml::Value::Tagged(_) => "a tagged value",
+        yaml_serde::Value::Null => "null",
+        yaml_serde::Value::Bool(_) => "a boolean",
+        yaml_serde::Value::Number(_) => "a number",
+        yaml_serde::Value::String(_) => "a string",
+        yaml_serde::Value::Sequence(_) => "a list",
+        yaml_serde::Value::Mapping(_) => "a map",
+        yaml_serde::Value::Tagged(_) => "a tagged value",
     }
 }
 
@@ -701,10 +701,10 @@ fn de_opt_char<'de, D>(deserializer: D) -> Result<Option<char>, D::Error>
 where
     D: Deserializer<'de>,
 {
-    let value = serde_yaml::Value::deserialize(deserializer)?;
+    let value = yaml_serde::Value::deserialize(deserializer)?;
     match value {
-        serde_yaml::Value::Null => Ok(None),
-        serde_yaml::Value::String(text) => one_char(&text).map(Some).map_err(de::Error::custom),
+        yaml_serde::Value::Null => Ok(None),
+        yaml_serde::Value::String(text) => one_char(&text).map(Some).map_err(de::Error::custom),
         _ => Err(de::Error::custom(
             "expected a single character; quote YAML 1.1 booleans such as 'y', 'n', 'yes', and 'no'",
         )),
@@ -715,11 +715,11 @@ fn de_chars<'de, D>(deserializer: D) -> Result<Vec<char>, D::Error>
 where
     D: Deserializer<'de>,
 {
-    let values = Vec::<serde_yaml::Value>::deserialize(deserializer)?;
+    let values = Vec::<yaml_serde::Value>::deserialize(deserializer)?;
     values
         .into_iter()
         .map(|value| match value {
-            serde_yaml::Value::String(text) => one_char(&text).map_err(de::Error::custom),
+            yaml_serde::Value::String(text) => one_char(&text).map_err(de::Error::custom),
             _ => Err(de::Error::custom(
                 "expected a single character; quote YAML 1.1 booleans such as 'y', 'n', 'yes', and 'no'",
             )),
