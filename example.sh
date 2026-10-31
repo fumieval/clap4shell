@@ -27,6 +27,20 @@ args:
       help: this option can be specified via an environment variable too
       env: CLAP4SHELL_TOKEN
       takes_value: true
+  - force:
+      long: force
+      action: set_true
+      help: overwrite existing output
+  - config:
+      long: config
+      value_name: PATH
+      value_hint: file_path
+      help: configuration file
+  - format:
+      long: format
+      possible_values: [ text, json ]
+      default_value: text
+      help: output format
   - cmd:
       help: command
   - arg:

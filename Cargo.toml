@@ -2,18 +2,16 @@
 name = "clap4shell"
 description = "rich getopts replacement for shell script"
 homepage = "https://github.com/fumieval/clap4shell"
-version = "0.3.2"
+version = "0.4.0"
 authors = ["Fumiaki Kinoshita <fumiexcel@gmail.com>"]
-edition = "2021"
+edition = "2024"
+rust-version = "1.85"
 license = "MIT"
 readme = "README.md"
 categories = ["command-line-utilities", "command-line-interface"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-clap = { version = "3.2.25", features = ["env"] }
-yaml-rust = "0.4.5"
-serde_yaml = "0.9.34"
-clap-serde = { version = "0.5.1", features = ["env"] }
-clap_complete = { version = "3.2.5" }
+clap = { version = "4.6.7", features = ["string", "env", "wrap_help"] }
+clap_complete = "4.6.11"
+serde = { version = "1", features = ["derive"] }
+yaml_serde = "0.10.7"
